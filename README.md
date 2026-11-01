@@ -1,270 +1,281 @@
-# Search Lab: Teknikat e Painformuara të Kërkimit
+# Search Lab: Uninformed Search Techniques
 
-Detyra e parë semestrale. Katër probleme, tre algoritme dhe **një motor kërkimi i përbashkët**.
+Assignment 1. Four problems, three algorithms and **one shared search engine**.
 
-## Si ekzekutohet
+## How to run
 
-### Aplikacioni web (FastAPI), mënyra kryesore
+### Web app (FastAPI), the main way
 ```bash
 pip install -r requirements.txt
-python server.py               # hap http://127.0.0.1:8000
+python server.py               # open http://127.0.0.1:8000
 ```
-Faqja është në anglisht. Çdo algoritëm ekzekutohet **live** në server. Faqja e riprodhon kërkimin hap pas hapi mbi tabelë
-(Sudoku, Latin Square, orari i Golfers), me grafikun e thellësisë dhe me zë.
-Në hyrje është **matrica e kërkesave**: çdo kërkesë e detyrës lidhet me seksionin ku zgjidhet.
+Every algorithm runs **live** on the server. The page replays the search step by step on the board
+(Sudoku, Latin Square, the Golfers schedule), together with a depth chart and optional sound.
+The overview page has a **requirements matrix**: every requirement of the assignment links to the section that fulfils it.
 
-| Endpoint | Çka bën |
+| Endpoint | What it does |
 |---|---|
-| `GET /api/golfers?g=8&p=4&w=6&restarts=false` | DFS për SGP(g, p, w) |
-| `GET /api/golfers/landscape?g=8&p=4&w=10` | landscape i Golfers |
-| `POST /api/sudoku` `{"level": "hard", "algo": "BFS"}` ose `{"puzzle": "81 shifra"}` | zgjidhësi i Sudoku |
+| `GET /api/golfers?g=8&p=4&w=6&restarts=false` | DFS for SGP(g, p, w) |
+| `GET /api/golfers/landscape?g=8&p=4&w=10` | Golfers landscape |
+| `POST /api/sudoku` `{"level": "hard", "algo": "BFS"}` or `{"puzzle": "81 digits"}` | Sudoku solver |
 | `GET /api/latin?n=5&algo=IDDFS` | Latin Square |
 | `GET /api/trees/puzzle?start=123046758` · `/api/trees/mc?m=3&c=3&boat=2` · `/api/trees/rws` | search trees |
-| `GET /api/race/{golfers,sudoku,latin}?algo=DFS` | gara |
+| `GET /api/race/{golfers,sudoku,latin}?algo=DFS` | algorithm race |
 
-Dokumentimi automatik i API-së: `http://127.0.0.1:8000/docs`
+Automatic API documentation: `http://127.0.0.1:8000/docs`
 
-### Nga terminali
+### From the terminal
 ```bash
-python main.py                 # menu interaktive
-python main.py golfers         # 32 lojtarë: "Sa javë?"
-python main.py golfers 8 4 6   # A është e mundur g=8, p=4, w=6?
+python main.py                 # interactive menu
+python main.py golfers         # 32 players: "How many weeks?"
+python main.py golfers 8 4 6   # Is g=8, p=4, w=6 possible?
 python main.py sudoku          # Easy, Medium, Hard
-python main.py sudoku hard     # një nivel (ose 81 shifra, 0 = bosh)
-python main.py latin 5         # katror latin n = 5
-python main.py trees           # 3 search trees
-python main.py race            # gara DFS vs BFS vs IDDFS
+python main.py sudoku hard     # one level (or 81 digits, 0 = empty)
+python main.py latin 5         # Latin square with n = 5
+python main.py trees           # the 3 search trees
+python main.py race            # race: DFS vs BFS vs IDDFS
 
-python export_web.py           # version statik: gjeneron web/data.js për web/index.html
+python make_trees_pdf.py       # search trees as a step-by-step PDF -> Search_Trees_PDF/
+python export_web.py           # static version: generates web/data.js for web/index.html
 ```
 
-Algoritmet kërkojnë vetëm Python 3.10 ose më të ri. FastAPI duhet vetëm për serverin web.
+The algorithms only need Python 3.10 or newer. FastAPI is only needed for the web server,
+matplotlib only for the PDF generator.
 
-## Struktura
+## Project structure
 
-| Skedari | Çka përmban |
+| File | Contents |
 |---|---|
-| [engine.py](engine.py) | Motori: `Problem`, **DFS**, **BFS**, **IDDFS**, statistikat |
+| [engine.py](engine.py) | The engine: `Problem`, **DFS**, **BFS**, **IDDFS**, statistics |
 | [golfers.py](golfers.py) | 1. Social Golfers (DFS + Backtracking) |
-| [sudoku.py](sudoku.py) | 2. Sudoku (BFS + Backtracking), 3 nivele + 1 bonus |
+| [sudoku.py](sudoku.py) | 2. Sudoku (BFS + Backtracking), 3 levels + 1 bonus |
 | [latin_square.py](latin_square.py) | 3. Latin Square (IDDFS + Backtracking) |
 | [search_trees.py](search_trees.py) | 4. Search Trees: 8-Puzzle, Missionaries & Cannibals, Rotating Workforce |
-| [landscape.py](landscape.py) | Llogaritja e landscape (madhësia + shpërndarja e f) |
-| [main.py](main.py) | Programi në terminal |
-| [server.py](server.py) | Serveri FastAPI (API + faqja) |
-| [static/](static/) | Faqja web live (në anglisht): `index.html`, `app.js` (logjika), `style.css` + `visuals.css` + `polish.css` (dizajni), `polish.js` (animacionet) |
-| [web/index.html](web/index.html) | Versioni statik i vizualizimit (pa server) |
+| [landscape.py](landscape.py) | Landscape computation (size + distribution of f) |
+| [main.py](main.py) | Command-line program |
+| [server.py](server.py) | FastAPI server (API + web page) |
+| [static/](static/) | The live web app: `index.html`, `app.js` (logic), `style.css` + `visuals.css` + `polish.css` (design), `polish.js` (animations) |
+| [make_trees_pdf.py](make_trees_pdf.py) | Generates the search trees as PDF, step by step |
+| [web/index.html](web/index.html) | Older static version of the visualisation (no server needed) |
 
-## Ideja kryesore: një motor për të gjitha problemet
+## Key idea: one engine for every problem
 
-Çdo problem përshkruhet me të njëjtat pjesë:
+Every problem is described with the same parts:
 
-| Pjesa | Kuptimi |
+| Part | Meaning |
 |---|---|
-| **Variablat** | Çka duhet të vendosim |
-| **Domain** | Vlerat që mund t'i marrë një variabël |
-| **Kufizimet** | Rregullat që nuk lejohet të shkelen |
-| **Objective function** | `f(s)` = numri i shkeljeve. **f(s) = 0 ⇔ s është zgjidhje** |
+| **Variables** | What we have to decide |
+| **Domain** | The values a variable can take |
+| **Constraints** | The rules that must not be broken |
+| **Objective function** | `f(s)` = number of violations. **f(s) = 0 ⇔ s is a solution** |
 
-Algoritmet në `engine.py` **nuk e dinë** cili problem po zgjidhet. Ata thërrasin vetëm:
-`next_variable` (cila variabël vjen), `values` (cilat vlera janë ende të lejuara), `assign` / `unassign`.
+The algorithms in `engine.py` **do not know** which problem they are solving. They only call:
+`next_variable` (which variable comes next), `values` (which values are still allowed), `assign` / `unassign`.
 
-**Backtracking** do të thotë: kur një variabël nuk ka asnjë vlerë të lejuar, dega braktiset.
-- Te **DFS** dhe **IDDFS**: zhbëjmë vendimin e fundit (`unassign`) dhe provojmë vlerën tjetër.
-- Te **BFS**: gjendja pa rrugëdalje hidhet nga radha dhe nuk zgjerohet më. Vlerat që shkelin kufizimet nuk futen kurrë në radhë.
+**Backtracking** means: when a variable has no allowed value left, the branch is abandoned.
+- In **DFS** and **IDDFS**: we undo the last decision (`unassign`) and try the next value.
+- In **BFS**: a state with no way forward is dropped from the queue and never expanded. Values that break a constraint are never put in the queue.
 
-Çdo zgjidhje e gjetur **verifikohet** me objective function: programi printon `f(s) = 0`.
+Every solution found is **verified** with the objective function: the program prints `f(s) = 0`.
 
 ---
 
 ## 1. Social Golfers Problem (DFS + Backtracking)
 
-### Modelimi dhe reprezentimi
-Rasti i përgjithshëm: `g` grupe, `p` lojtarë për grup, `w` javë, `n = g·p`.
+### Model and representation
+General case: `g` groups, `p` players per group, `w` weeks, `n = g·p`.
 
-- **Variablat:** `X(j, k, s)` = lojtari në javën *j*, grupin *k*, vendin *s*. Gjithsej `w·g·p` variabla (për 8×4×10: 320).
+- **Variables:** `X(j, k, s)` = the player in week *j*, group *k*, seat *s*. In total `w·g·p` variables (for 8×4×10: 320).
 - **Domain:** `{0, 1, …, n−1}`
-- **Kufizimet:**
-  - K1: në një javë, çdo lojtar luan saktësisht një herë.
-  - K2: dy lojtarë takohen më së shumti **një herë** gjatë gjithë javëve.
-- **Thyerja e simetrisë** (nuk e ndryshon përgjigjen, vetëm e shkurton kërkimin):
-  - S1: java 1 merret fikse, **saktësisht si në shembullin e detyrës**.
-  - S2: brenda grupit lojtarët janë në rend rritës (`{1,5,9,13}` = `{13,9,5,1}`).
-  - S3: grupi fillon me lojtarin më të vogël që s'ka luajtur ende atë javë (renditja e grupeve s'ka rëndësi).
-  - S4: javët renditen sipas partnerit të dytë të lojtarit 0 (renditja e javëve s'ka rëndësi).
-- **Forward checking:** pas çdo vendosjeje kontrollojmë: a ka çdo lojtar i lirë ende së paku `p−1` partnerë që s'i ka takuar? Nëse jo, dega pritet **menjëherë**, pa pritur të ngecet më poshtë.
-- **Reprezentimi në kod:** bashkësitë ruhen si **bitmask** (numër i plotë ku biti *i* = lojtari *i*). Kështu kontrolli "a janë takuar?" bëhet me një veprim të vetëm.
+- **Constraints:**
+  - C1: in one week, every player plays exactly once.
+  - C2: two players meet at most **once** over all weeks.
+- **Symmetry breaking** (does not change the answer, only shortens the search):
+  - S1: week 1 is fixed, **exactly as in the assignment's example**.
+  - S2: inside a group, players are in increasing order (`{1,5,9,13}` = `{13,9,5,1}`).
+  - S3: a group starts with the smallest player who has not played yet that week (the order of groups does not matter).
+  - S4: weeks are ordered by player 0's second partner (the order of weeks does not matter).
+- **Forward checking:** after every assignment we check whether every free player still has at least `p−1` partners they have not met. If not, the branch is cut **immediately**, without waiting to get stuck further down.
+- **Representation in code:** sets are stored as **bitmasks** (an integer where bit *i* = player *i*). The check "have they met?" is a single operation.
+
+**Note on the example:** in the assignment's table, "Week 1" sits in the "Group 1" column, so the groups are shifted one column and Group 8 is empty. The missing players are exactly 16, 17, 18, 19, so Group 8 = {16, 17, 18, 19}.
 
 ### Objective function
 ```
-f(s) = Σ_{çdo çift (a,b)} max(0, takime(a,b) − 1)  +  Σ_{çdo javë} (lojtarë të përsëritur)
-f(s) = 0  ⇔  orari është i vlefshëm
+f(s) = Σ_{every pair (a,b)} max(0, meetings(a,b) − 1)  +  Σ_{every week} (repeated players)
+f(s) = 0  ⇔  the schedule is valid
 ```
 
-### Përgjigjja: sa javë?
-Në çdo javë një lojtar takon `p − 1 = 3` lojtarë të rinj. Gjithsej ka `n − 1 = 31` për të takuar. Pra:
+### The answer: how many weeks?
+Each week a player meets `p − 1 = 3` new players. In total there are `n − 1 = 31` to meet. So:
 
 ```
-w ≤ ⌊(n − 1) / (p − 1)⌋ = ⌊31 / 3⌋ = 10 javë
+w ≤ ⌊(n − 1) / (p − 1)⌋ = ⌊31 / 3⌋ = 10 weeks
 ```
 
-| Metoda | Javë të gjetura për 32 lojtarë |
+| Method | Weeks found for 32 players |
 |---|---|
-| Kufiri teorik | **10** |
-| DFS + Backtracking (deterministik) | **6** (≈ 20 s, 2 milionë nyje) |
-| DFS me rinisje të rastësishme | **7** (≈ 1 min) |
+| Theoretical bound | **10** |
+| DFS + Backtracking (deterministic) | **6** (≈ 20 s, 2 million nodes) |
+| DFS with random restarts | **7** (≈ 1 min) |
 
-Sipas literaturës (CSPLib, problemi 10), zgjidhja me 10 javë ekziston, por u gjet vetëm në vitin 2004 me metoda të specializuara konstruktive. Kërkimi i verbër ngadalësohet sepse në javët e fundit mbeten shumë pak çifte të lira.
+According to the literature (CSPLib, problem 10), a 10-week solution exists, but it was only found in 2004 with specialised constructive methods. Blind search slows down because very few free pairs are left in the last weeks.
 
-**DFS me rinisje:** DFS i thjeshtë ngec në një degë të keqe herët dhe nuk del prej saj. E ndalojmë pas 20 000 nyjeve dhe e nisim përsëri me renditje tjetër të vlerave. Mbetet DFS + Backtracking, pa heuristikë.
+**DFS with restarts:** plain DFS gets stuck early in a bad branch and never gets out. We stop it after 20,000 nodes and start again with a different value order. It is still DFS + Backtracking, with no heuristic.
 
-**Kufiri nuk arrihet gjithmonë:** për 12 lojtarë (4 grupe × 3), kufiri është ⌊11/2⌋ = 5. DFS e eksploron **gjithë** pemën dhe **vërteton** që 5 javë janë të pamundura (`python main.py golfers 4 3 5`). Maksimumi është 4.
+**The bound is not always reachable:** for 12 players (4 groups × 3) the bound is ⌊11/2⌋ = 5. DFS explores the **whole** tree and **proves** that 5 weeks are impossible (`python main.py golfers 4 3 5`). The maximum is 4.
 
-### Landscape (32 lojtarë, 10 javë)
-| Hapësira | Madhësia |
+### Landscape (32 players, 10 weeks)
+| Space | Size |
 |---|---|
-| Pa kufizime: 32^320 | ≈ 10^482 |
-| Çdo javë një permutacion (K1): (32!)^10 | ≈ 10^354 |
-| Çdo javë një ndarje në grupe: P^10, ku P = 32! / ((4!)^8 · 8!) | ≈ 10^198 |
-| Me javën 1 fikse: P^9 | ≈ 10^178 |
+| No constraints: 32^320 | ≈ 10^482 |
+| Each week a permutation (C1): (32!)^10 | ≈ 10^354 |
+| Each week a partition into groups: P^10, where P = 32! / ((4!)^8 · 8!) | ≈ 10^198 |
+| Week 1 fixed: P^9 | ≈ 10^178 |
 
-Nga 2000 orare të rastësishme, **asnjë** nuk ka f = 0. Zgjidhjet janë "gjilpërë në kashtë".
+Out of 2,000 random schedules, **none** has f = 0. Solutions are "a needle in a haystack".
 
 ---
 
 ## 2. Sudoku Solver (BFS + Backtracking)
 
-### Modelimi dhe reprezentimi
-- **Variablat:** `X(r, c)` për çdo qelizë **bosh**.
+### Model and representation
+- **Variables:** `X(r, c)` for every **empty** cell.
 - **Domain:** `{1, …, 9}`
-- **Kufizimet:** AllDifferent në çdo rresht, kolonë dhe kuti 3×3 (27 kufizime). Numrat e dhënë nuk ndryshojnë.
-- **Gjendja:** listë me 81 numra, ku 0 = bosh. Variabla e radhës është qeliza e parë bosh (renditje fikse, e painformuar).
-- **Lidhja me problemin 3:** një Sudoku i zgjidhur **është** Latin Square 9×9 me një kufizim shtesë për kutitë.
+- **Constraints:** AllDifferent in every row, column and 3×3 box (27 constraints). The given numbers never change.
+- **State:** a list of 81 numbers, 0 = empty. The next variable is the first empty cell (fixed, uninformed order).
+- **Link to Problem 3:** a solved Sudoku **is** a 9×9 Latin square with an extra constraint for the boxes.
 
 ### Objective function
 ```
-f(s) = Σ_{27 njësitë} (9 − numri i vlerave të ndryshme në njësi)
-f(s) = 0  ⇔  Sudoku është zgjidhur
+f(s) = Σ_{27 units} (9 − number of distinct values in the unit)
+f(s) = 0  ⇔  the Sudoku is solved
 ```
 
-### Tri nivelet
-Niveli është **matur** me punën që i duhet BFS-it. Çdo Sudoku është kontrolluar që ka **saktësisht një** zgjidhje.
+### The three levels
+The level is **measured** by the work BFS needs. Every puzzle was checked to have **exactly one** solution.
 
-| Niveli | Qeliza bosh | Nyje BFS | Gjendje në memorie (max) | Koha |
+| Level | Empty cells | BFS nodes | States in memory (max) | Time |
 |---|---|---|---|---|
 | Easy | 45 | 68 | 5 | 0.00 s |
-| Medium | 51 | 4 631 | 738 | 0.01 s |
-| Hard | 60 | 364 345 | 33 031 | ≈ 1 s |
-| Ekstrem (bonus: Arto Inkala, 2012) | 61 | 2 068 780 | 356 812 | ≈ 6 s |
+| Medium | 51 | 4,631 | 738 | 0.01 s |
+| Hard | 60 | 364,345 | 33,031 | ≈ 1 s |
+| Extreme (bonus: Arto Inkala, 2012) | 61 | 2,068,780 | 356,812 | ≈ 6 s |
 
 ### Landscape
-| Niveli | Pa kufizime 9^bosh | Pas heqjes së vlerave që bien ndesh me të dhënat | Zgjidhje |
+| Level | No constraints 9^empty | After removing values that clash with the givens | Solutions |
 |---|---|---|---|
 | Easy | 10^42.9 | 10^11.1 | 1 |
 | Medium | 10^48.7 | 10^22.6 | 1 |
 | Hard | 10^57.3 | 10^35.8 | 1 |
 
-### Pse BFS "me backtracking"?
-BFS në kuptimin klasik nuk kthehet mbrapa, sepse i mban të gjitha degët njëkohësisht në radhë (FIFO). Te ne, backtracking-u ndodh në dy vende:
-1. Një vlerë që shkel kufizimet **nuk futet kurrë** në radhë (pruning).
-2. Një gjendje ku variabla e radhës nuk ka **asnjë** vlerë të lejuar hidhet. Kjo është rrugë qorre, dhe numërohet si backtrack.
+### Why BFS "with backtracking"?
+Classic BFS does not go back, because it keeps every branch in the queue (FIFO) at the same time. Here backtracking happens in two places:
+1. A value that breaks a constraint is **never put** in the queue (pruning).
+2. A state whose next variable has **no** allowed value is dropped. It is a dead end and is counted as a backtrack.
 
-Kostoja e BFS është **memoria**: te Sudoku Ekstrem mban 356 812 Sudoku të pjesshme njëkohësisht, ndërsa DFS mban vetëm 61 (një për çdo nivel).
+The cost of BFS is **memory**: on the Extreme Sudoku it holds 356,812 partial Sudokus at once, while DFS holds only 61 (one per level).
 
 ---
 
 ## 3. Latin Square (IDDFS + Backtracking)
 
-### Modelimi dhe reprezentimi
-- **Variablat:** `X(r, c)` për çdo qelizë, n² variabla.
+### Model and representation
+- **Variables:** `X(r, c)` for every cell, n² variables.
 - **Domain:** `{1, …, n}`
-- **Kufizimet:** AllDifferent në çdo rresht dhe në çdo kolonë.
-- **Thyerja e simetrisë:** rreshti i parë = 1 2 … n (si në shembullin e detyrës), kolona e parë = 1 2 … n. Çdo katror latin mund të kthehet në këtë formë duke i riemërtuar numrat dhe duke i ndërruar rreshtat, prandaj nuk humbet asnjë zgjidhje.
+- **Constraints:** AllDifferent in every row and every column.
+- **Symmetry breaking:** first row = 1 2 … n (as in the assignment's example), first column = 1 2 … n. Every Latin square can be brought into this form by relabelling the numbers and reordering the rows, so no solution is lost.
 
 ### Objective function
 ```
-f(s) = Σ_{rreshta} (n − vlera të ndryshme) + Σ_{kolona} (n − vlera të ndryshme)
-f(s) = 0  ⇔  s është katror latin
+f(s) = Σ_{rows} (n − distinct values) + Σ_{columns} (n − distinct values)
+f(s) = 0  ⇔  s is a Latin square
 ```
 
 ### IDDFS
-DFS me kufi thellësie `L = 0, 1, 2, …`. Çdo iteracion rifillon nga rrënja.
-- Memoria: si DFS, `O(thellësia)`.
-- Garancia: si BFS, gjen zgjidhjen më të cekët.
-- Kostoja: nivelet e sipërme rivizitohen në çdo iteracion.
+DFS with a depth limit `L = 0, 1, 2, …`. Every iteration starts again from the root.
+- Memory: like DFS, `O(depth)`.
+- Guarantee: like BFS, it finds the shallowest solution.
+- Cost: the upper levels are revisited in every iteration.
 
-| n | Nyje IDDFS | Iteracione | Koha |
+| n | IDDFS nodes | Iterations | Time |
 |---|---|---|---|
 | 4 | 151 | 10 | 0.00 s |
-| 5 | 4 897 | 17 | 0.01 s |
-| 6 | 1 194 051 | 26 | ≈ 2.6 s |
+| 5 | 4,897 | 17 | 0.01 s |
+| 6 | 1,194,051 | 26 | ≈ 2.6 s |
 
-**Zbulim nga eksperimentet:** te Latin Square **të gjitha** zgjidhjet ndodhen në thellësinë e fundit (çdo qelizë e mbushur). Për çdo kufi `L` para saj, IDDFS e eksploron **gjithë** pemën deri në `L`, kurse iteracioni i fundit është thjesht DFS. Për n = 6, DFS i duhen 51 nyje dhe IDDFS-it 1.2 milionë. Pa thyerjen e simetrisë, IDDFS nuk e zgjidh as n = 5 brenda 20 sekondave. Për n ≥ 7 programi e shpjegon këtë dhe e tregon zgjidhjen e iteracionit të fundit (DFS).
+**Finding from the experiments:** for Latin squares **all** solutions sit at the deepest level (every cell filled). For every limit `L` before that, IDDFS explores the **whole** tree up to `L`, while the last iteration is just DFS. For n = 6, DFS needs 51 nodes and IDDFS 1.2 million. Without symmetry breaking, IDDFS cannot even solve n = 5 within 20 seconds. For n ≥ 7 the program explains this and shows the solution of the last iteration (DFS).
 
-IDDFS shkëlqen kur zgjidhja është **e cekët** dhe thellësia e saj nuk dihet, p.sh. te 8-Puzzle.
+IDDFS shines when the solution is **shallow** and its depth is unknown, e.g. in the 8-Puzzle.
 
-**Krahasim pa kërkim:** `L[r][c] = ((c − r) mod n) + 1` jep **saktësisht** daljen e shembullit të detyrës.
+**Comparison without search:** `L[r][c] = ((c − r) mod n) + 1` gives **exactly** the output of the assignment's example.
+
+**Note on the example:** in the assignment's Markdown the output starts with ` ```1 2 3 4 5 `, so the first row is read as the code block's language name and is not displayed. The full output for n = 5 has 5 rows, starting with `1 2 3 4 5`.
 
 ### Landscape (n = 5)
-| Hapësira | Madhësia |
+| Space | Size |
 |---|---|
-| Pa kufizime: 5^25 | ≈ 10^17.5 |
-| Çdo rresht permutacion: (5!)^5 | ≈ 10^10.4 |
-| Katrorë latinë (zgjidhje): 161 280 | ≈ 10^5.2 |
+| No constraints: 5^25 | ≈ 10^17.5 |
+| Every row a permutation: (5!)^5 | ≈ 10^10.4 |
+| Latin squares (solutions): 161,280 | ≈ 10^5.2 |
 
-Numri i saktë i katrorëve latinë sipas n (OEIS A002860): 1, 2, 12, 576, 161 280, 812 851 200, … Për n ≤ 4 programi i numëron vetë (`latin_square.count_all(4)` = 576).
+The exact number of Latin squares by n (OEIS A002860): 1, 2, 12, 576, 161,280, 812,851,200, … For n ≤ 4 the program counts them itself (`latin_square.count_all(4)` = 576).
 
 ---
 
 ## 4. Search Trees
 
-Pema ndërtohet me të njëjtin funksion për të tre problemet (`build_tree`). Çdo nyje shënohet:
+All three trees are built by the same function (`build_tree`). Every node is marked:
 
-| Shenja | Kuptimi |
+| Mark | Meaning |
 |---|---|
-| `[GOAL]` | gjendje përfundimtare |
-| `[X invalid]` | shkel një kufizim; nuk zgjerohet |
-| `[perseritur]` | gjendje e parë më parë; nuk zgjerohet (përndryshe pema do ishte e pafundme) |
-| `*` | nyja është në rrugën e zgjidhjes |
+| `[GOAL]` | final state |
+| `[X invalid]` | breaks a constraint; not expanded |
+| `[perseritur]` (repeated) | state seen before; not expanded (otherwise the tree would be infinite) |
+| `*` | the node is on the solution path |
+
+The step-by-step PDF version of the trees is in `Search_Trees_PDF/` (generated by `make_trees_pdf.py`).
 
 ### 8-Puzzle (BFS)
-- **Gjendja:** tabela 3×3, 0 = vendi bosh. **Veprimet:** lëvizja e vendit bosh LART, POSHTË, MAJTAS, DJATHTAS.
-- **Goal:** `123/456/78_`. Nga `123/_46/758` zgjidhja ka 3 hapa. Pema ka 24 nyje.
-- Fakt: gjysma e gjendjeve të 8-Puzzle nuk e arrijnë dot goal-in (paritet i inversioneve, `EightPuzzle.is_solvable`).
+- **State:** a 3×3 board, 0 = the blank. **Actions:** move the blank UP, DOWN, LEFT, RIGHT.
+- **Goal:** `123/456/78_`. From `123/_46/758` the solution takes 3 moves. The tree has 24 nodes.
+- Fact: half of all 8-Puzzle states can never reach the goal (inversion parity, `EightPuzzle.is_solvable`).
 
 ### Missionaries and Cannibals (BFS)
-- **Gjendja:** `(M, C, B)` = misionarë dhe kanibalë në bregun e majtë, B = ku është varka.
-- **Veprimet:** varka merr 1M, 2M, 1C, 2C ose 1M+1C.
-- **Kufizimi:** në asnjë breg kanibalët s'janë më shumë se misionarët (kur ka misionarë).
-- Pema e plotë ka 47 nyje. Zgjidhja ka **11 kalime**.
+- **State:** `(M, C, B)` = missionaries and cannibals on the left bank, B = where the boat is.
+- **Actions:** the boat carries 1M, 2M, 1C, 2C or 1M+1C.
+- **Constraint:** on no bank may cannibals outnumber missionaries (when there are missionaries).
+- The full tree has 47 nodes. The solution takes **11 crossings**.
 
 ### Rotating Workforce Scheduling (DFS)
-Detyra nuk jep të dhëna, prandaj e përcaktuam vetë një rast të vogël:
-- 3 punëtorë, 7 ditë, ndërrimet **D** (ditë), **N** (natë), **-** (pushim).
-- Çdo ditë duhet 1 D, 1 N dhe 1 pushim.
-- *Rotating:* orari ka 3 rreshta. Punëtori 1 nis me rreshtin 1 dhe çdo javë kalon në rreshtin tjetër, kështu që 21 ditët lexohen si një varg ciklik.
-- **Rregullat:** pas N nuk vjen D · jo më shumë se 4 ditë punë radhazi · jo më shumë se 2 pushime radhazi.
-- **Gjendja:** ditët e caktuara deri tani. **Veprimi:** cakto ditën e radhës (6 mënyra).
+The assignment gives no data, so we defined a small instance ourselves:
+- 3 workers, 7 days, shifts **D** (day), **N** (night), **-** (day off).
+- Every day needs 1 D, 1 N and 1 day off.
+- *Rotating:* the roster has 3 rows. Worker 1 starts on row 1 and moves to the next row every week, so the 21 days are read as one cyclic sequence.
+- **Rules:** N is never followed by D · at most 4 work days in a row · at most 2 days off in a row.
+- **State:** the days assigned so far. **Action:** assign the next day (6 ways).
 
 ---
 
-## Gara e algoritmeve (`python main.py race`)
+## Algorithm race (`python main.py race`)
 
-| Problemi | DFS | BFS | IDDFS |
+| Problem | DFS | BFS | IDDFS |
 |---|---|---|---|
-| Golfers 8×4, 5 javë | ✔ 5 713 nyje, 0.06 s | ✖ memoria: 600 mijë gjendje | ✖ rivizitime |
-| Sudoku Hard | ✔ 304 053 nyje | ✔ 364 345 nyje, 33 mijë në memorie | ✖ > 2 milionë nyje |
-| Latin Square n = 6 | ✔ 51 nyje | ✔ 172 914 nyje | ✔ 1 194 051 nyje |
+| Golfers 8×4, 5 weeks | ✔ 5,713 nodes, 0.06 s | ✖ memory: 600 thousand states | ✖ revisits |
+| Sudoku Hard | ✔ 304,053 nodes | ✔ 364,345 nodes, 33 thousand in memory | ✖ > 2 million nodes |
+| Latin Square n = 6 | ✔ 51 nodes | ✔ 172,914 nodes | ✔ 1,194,051 nodes |
 
-**Përfundimi:**
-- **DFS** përdor pak memorie dhe arrin shpejt në fund, por mund të ngecë në një degë të keqe.
-- **BFS** gjen zgjidhjen më të cekët, por e paguan me memorie të madhe.
-- **IDDFS** ka memorien e DFS-it dhe garancinë e BFS-it, por i përsërit nivelet e sipërme. Ia vlen vetëm kur zgjidhja është e cekët.
+**Conclusion:**
+- **DFS** uses little memory and reaches the bottom fast, but it can get stuck in a bad branch.
+- **BFS** finds the shallowest solution, but pays for it with a lot of memory.
+- **IDDFS** has the memory of DFS and the guarantee of BFS, but repeats the upper levels. It is only worth it when the solution is shallow.
 
-## Vizualizimi (`web/index.html`)
-- **Modeli** i çdo problemi në kartela.
-- **Landscape:** madhësia e hapësirës (shkallë logaritmike) dhe histogrami i f(s).
-- **"Si mendon algoritmi":** grafiku i thellësisë së çdo nyjeje sipas rendit të vizitës. DFS vizaton dhëmbë sharre, BFS shkallë, IDDFS disa sharra njëra pas tjetrës (një për çdo iteracion). Mund të luhet hap pas hapi, me zë.
-- **Golfers:** matrica e takimeve 32×32 dhe orari me **emrat e klasës**.
-- **Search Trees:** pemë që hapen dhe mbyllen me klik, me rrugën e zgjidhjes të theksuar.
-- **Gara** e tre algoritmeve.
+## The web app (`static/`)
+- **Requirements matrix** on the overview page, linking every requirement to its section.
+- **Model and representation** as interactive boards: hover a cell to see its variable, domain and constraints.
+- **Objective function:** a live f(s) meter; conflicts light up in red.
+- **Landscape:** a powers-of-ten ruler, the "haystack" of random states and the histogram of f(s).
+- **Live algorithm:** a player that replays the search on the board, with a depth chart. DFS draws a sawtooth, BFS a staircase, IDDFS several sawtooths (one per iteration).
+- **Golfers:** a ring graph of the players, the 32×32 meeting matrix and the schedule with your **class names**.
+- **Search Trees:** interactive tree diagrams with zoom, with the solution path highlighted.
+- **Race** between the three algorithms.

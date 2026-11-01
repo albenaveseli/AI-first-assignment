@@ -1,14 +1,14 @@
 """
-3. LATIN SQUARE - zgjidhet me IDDFS + Backtracking
+3. LATIN SQUARE - solved with IDDFS + Backtracking
 
-MODELIMI
-  Variablat : X(r,c) per cdo qelize, r,c = 0..n-1      -> n*n variabla
-  Domain    : D = {1, 2, ..., n}
-  Kufizimet : cdo rresht ka vlera te ndryshme (AllDifferent)
-              cdo kolone ka vlera te ndryshme (AllDifferent)
-  Gjendja   : lista me n*n qeliza; 0 = qelize bosh
-  Objective : f(s) = sum_rreshta (n - #vlera_te_ndryshme) + sum_kolona (n - #vlera_te_ndryshme)
-              f(s) = 0  <=>  s eshte katror latin
+MODEL
+  Variables  : X(r,c) for every cell, r,c = 0..n-1      -> n*n variables
+  Domain     : D = {1, 2, ..., n}
+  Constraints: every row has different values (AllDifferent)
+               every column has different values (AllDifferent)
+  State      : a list of n*n cells; 0 = empty cell
+  Objective  : f(s) = sum_rows (n - #distinct_values) + sum_columns (n - #distinct_values)
+               f(s) = 0  <=>  s is a Latin square
 """
 
 import math
@@ -16,7 +16,7 @@ import random
 
 from engine import Problem
 
-# Numri i sakte i katroreve latine (OEIS A002860), per landscape.
+# The exact number of Latin squares (OEIS A002860), used for the landscape.
 KNOWN_COUNTS = {
     1: 1, 2: 2, 3: 12, 4: 576, 5: 161280, 6: 812851200, 7: 61479419904000,
     8: 108776032459082956800, 9: 5524751496156892842531225600,
@@ -31,7 +31,7 @@ class LatinSquare(Problem):
     def __init__(self, n, symmetry=True, given=None):
         self.n = n
         self.symmetry = symmetry
-        self.given = given  # opsionale: grid me disa qeliza te dhena (0 = bosh)
+        self.given = given  # optional: a grid with some cells given (0 = empty)
 
     def initial_state(self):
         if self.given:
@@ -39,9 +39,9 @@ class LatinSquare(Problem):
         n = self.n
         state = [0] * (n * n)
         if self.symmetry:
-            # THYERJA E SIMETRISE: rreshti i pare = 1..n (si ne shembullin e detyres),
-            # kolona e pare = 1..n. Cdo katror latin mund te kthehet ne kete forme
-            # duke riemertuar numrat dhe duke nderruar rreshtat, pra nuk humbet asgje.
+            # SYMMETRY BREAKING: first row = 1..n (as in the assignment's example),
+            # first column = 1..n. Every Latin square can be brought into this form
+            # by relabelling the numbers and reordering the rows, so nothing is lost.
             for c in range(n):
                 state[c] = c + 1
             for r in range(n):
@@ -52,7 +52,7 @@ class LatinSquare(Problem):
         return list(state)
 
     def next_variable(self, state):
-        # Renditje fikse: rresht pas rreshti (kerkim i painformuar)
+        # Fixed order: row by row (uninformed search)
         try:
             return state.index(0)
         except ValueError:
@@ -90,7 +90,7 @@ class LatinSquare(Problem):
 
 
 def cyclic_construction(n):
-    """Pa kerkim fare: L[r][c] = ((c - r) mod n) + 1. Jep saktesisht shembullin e detyres."""
+    """No search at all: L[r][c] = ((c - r) mod n) + 1. Gives exactly the assignment's example."""
     return [((c - r) % n) + 1 for r in range(n) for c in range(n)]
 
 
@@ -99,8 +99,8 @@ def to_text(state, n):
 
 
 def count_all(n):
-    """Numeron te gjithe katroret latine me DFS te plote (vetem per n te vogel).
-    Pa thyerje simetrie, qe te numerohen te gjithe (jo vetem format e normalizuara)."""
+    """Counts all Latin squares with an exhaustive DFS (small n only).
+    No symmetry breaking, so that all of them are counted (not only the normalised forms)."""
     p = LatinSquare(n, symmetry=False)
     state = p.initial_state()
     count = 0
@@ -121,7 +121,7 @@ def count_all(n):
 
 
 def landscape_sizes(n):
-    """Madhesia e hapesires se kerkimit, hap pas hapi."""
+    """The size of the search space, step by step."""
     return [
         ("Pa asnje kufizim: n^(n*n)", n * n * math.log10(n)),
         ("Cdo rresht permutacion: (n!)^n", n * math.log10(math.factorial(n))),

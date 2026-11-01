@@ -1,12 +1,12 @@
 "use strict";
 /* =====================================================================
    SEARCH LAB - front end
-   Faqja pyet serverin (FastAPI) dhe vizaton rezultatet.
-   Gjurma e kerkimit (trace) eshte nje liste nyjesh:
+   The page asks the server (FastAPI) and draws the results.
+   A search trace is a list of nodes:
      [id, parent, label, depth, iteration, status, variable, value]
    ===================================================================== */
 
-/* ---------------- ndihmesa ---------------- */
+/* ---------------- helpers ---------------- */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 function h(tag, attrs = {}, html = "") {
@@ -44,7 +44,7 @@ function statKpis(st, extra = []) {
     [fmt(st.max_memory), st.algorithm === "BFS" ? "max queue size" : "max stack depth"],
     [st.seconds + " s", "time"], ...(st.algorithm === "IDDFS" ? [[st.iterations, "iterations"]] : []), ...extra]);
 }
-// mini grid si HTML (per ilustrime te vogla)
+// mini grid as HTML (for small illustrations)
 function miniCells(arr, cols, size = 14, color = v => v ? "var(--accent-soft)" : "var(--soft)", text = true) {
   return `<span style="display:inline-grid;grid-template-columns:repeat(${cols},${size}px);gap:2px">${arr.map(v =>
     `<span style="width:${size}px;height:${size}px;border-radius:3px;background:${color(v)};font:700 ${Math.round(size * .62)}px var(--mono);
@@ -55,7 +55,7 @@ function flow(el, steps) {
     `<div class="st ${s.goal ? "goal" : ""}"><div class="k">${s.k}</div><div class="vis">${s.vis}</div><div class="cap">${s.cap}</div></div>`).join("");
 }
 
-/* ---------------- tema ---------------- */
+/* ---------------- theme ---------------- */
 (function theme() {
   let t = null;
   try { t = localStorage.getItem("sl-theme"); } catch (e) {}
@@ -68,7 +68,7 @@ function flow(el, steps) {
   };
 })();
 
-/* ---------------- navigimi ---------------- */
+/* ---------------- navigation ---------------- */
 const PAGES = ["home", "golfers", "sudoku", "latin", "trees", "race"];
 const ONSHOW = {}, SHOWN = {};
 function go(page, anchor) {
@@ -111,7 +111,7 @@ fetch("/api/sudoku/levels").then(r => { if (r.ok) $("#apiDot").classList.add("ok
   $$("#reqMatrix .cell").forEach(c => c.onclick = () => go(c.dataset.pg, c.dataset.a));
 })();
 
-// animacioni i hyrjes: nje peme e kerkuar me DFS, ne cikel
+// hero animation: a tree searched with DFS, in a loop
 (function heroArt() {
   const svg = $("#heroArt");
   (async function loop() {
@@ -152,35 +152,35 @@ fetch("/api/sudoku/levels").then(r => { if (r.ok) $("#apiDot").classList.add("ok
   })();
 })();
 
-// diagrami i motorit
+// engine diagram (colours are CSS variables so they follow the theme)
 (function engineDiagram() {
   const s = $("#engineDiagram");
-  const box = (x, y, w, hh, fill, stroke, r = 12) => s.append(svgEl("rect", { x, y, width: w, height: hh, rx: r, fill, stroke, "stroke-width": 1.5 }));
+  const box = (x, y, w, hh, fill, stroke, r = 12) => s.append(svgEl("rect", { x, y, width: w, height: hh, rx: r, style: `fill:${fill};stroke:${stroke}`, "stroke-width": 1.5 }));
   const t = (x, y, str, size = 13, weight = 400, anchor = "middle", color) => {
-    const e = svgEl("text", { x, y, "font-size": size, "font-weight": weight, "text-anchor": anchor }); if (color) e.setAttribute("fill", color); e.textContent = str; s.append(e); };
-  const arrow = (x1, y1, x2, y2) => s.append(svgEl("path", { d: `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`, fill: "none", stroke: css("--muted"), "stroke-width": 1.6, "marker-end": "url(#ah)" }));
+    const e = svgEl("text", { x, y, "font-size": size, "font-weight": weight, "text-anchor": anchor }); e.setAttribute("style", `fill:${color || "var(--ink)"}`); e.textContent = str; s.append(e); };
+  const arrow = (x1, y1, x2, y2) => s.append(svgEl("path", { d: `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`, style: "fill:none;stroke:var(--muted)", "stroke-width": 1.6, "marker-end": "url(#ah)" }));
   const defs = svgEl("defs"); const m = svgEl("marker", { id: "ah", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" });
-  m.append(svgEl("path", { d: "M0,0 L10,5 L0,10 z", fill: css("--muted") })); defs.append(m); s.append(defs);
-  // problemet
+  m.append(svgEl("path", { d: "M0,0 L10,5 L0,10 z", style: "fill:var(--muted)" })); defs.append(m); s.append(defs);
+  // the problems
   const probs = [["Social Golfers", "DFS", 1], ["Sudoku", "BFS", 2], ["Latin Square", "IDDFS", 3], ["Search Trees", "trees", 4]];
-  probs.forEach(([name, al, i], k) => { const y = 18 + k * 70; box(10, y, 200, 54, css("--paper"), css("--line"));
-    t(30, y + 33, String(i), 22, 700, "middle", css("--accent")); t(120, y + 25, name, 14, 700); t(120, y + 43, "uses " + al, 11, 400, "middle", css("--muted")); arrow(212, y + 27, 300, 150); });
-  // nderfaqja
-  box(302, 40, 250, 220, css("--accent-soft"), css("--accent"));
+  probs.forEach(([name, al, i], k) => { const y = 18 + k * 70; box(10, y, 200, 54, "var(--paper)", "var(--line)");
+    t(30, y + 33, String(i), 22, 700, "middle", "var(--accent)"); t(120, y + 25, name, 14, 700); t(120, y + 43, "uses " + al, 11, 400, "middle", "var(--muted)"); arrow(212, y + 27, 300, 150); });
+  // the interface
+  box(302, 40, 250, 220, "var(--accent-soft)", "var(--accent)");
   t(427, 70, "Problem interface", 15, 700);
   ["initial_state()", "next_variable(s)", "values(s, var)", "assign / unassign", "objective(s) → f"].forEach((m, i) => {
-    box(322, 86 + i * 33, 210, 26, css("--paper"), css("--line"), 7); t(427, 104 + i * 33, m, 12.5, 600); });
+    box(322, 86 + i * 33, 210, 26, "var(--paper)", "var(--line)", 7); t(427, 104 + i * 33, m, 12.5, 600); });
   arrow(554, 150, 630, 150);
-  // motori
-  box(632, 30, 160, 240, css("--paper"), css("--ink"));
+  // the engine
+  box(632, 30, 160, 240, "var(--paper)", "var(--ink)");
   t(712, 60, "Engine", 16, 700);
-  [["DFS", "--w1"], ["BFS", "--w2"], ["IDDFS", "--w3"]].forEach(([a, c], i) => { box(652, 78 + i * 60, 120, 46, css(c), css(c), 10); t(712, 107 + i * 60, a, 16, 800, "middle", "#fff"); });
+  [["DFS", "--w1"], ["BFS", "--w2"], ["IDDFS", "--w3"]].forEach(([a, c], i) => { box(652, 78 + i * 60, 120, 46, `var(${c})`, `var(${c})`, 10); t(712, 107 + i * 60, a, 16, 800, "middle", "#fff"); });
   arrow(794, 150, 850, 150);
-  box(852, 105, 100, 90, css("--good-soft"), css("--good"));
-  t(902, 140, "solution", 13, 700); t(902, 162, "f(s) = 0 ✔", 13, 700, "middle", css("--good"));
+  box(852, 105, 100, 90, "var(--good-soft)", "var(--good)");
+  t(902, 140, "solution", 13, 700); t(902, 162, "f(s) = 0 ✔", 13, 700, "middle", "var(--good)");
 })();
 
-// nenshkrimet sintetike te algoritmeve
+// synthetic algorithm signatures
 (function signatures() {
   const make = type => {
     const pts = []; let i = 0;
@@ -203,7 +203,7 @@ fetch("/api/sudoku/levels").then(r => { if (r.ok) $("#apiDot").classList.add("ok
 })();
 
 /* =====================================================================
-   PLAYER: riprodhon gjurmen e kerkimit hap pas hapi
+   PLAYER: replays the search trace step by step
    ===================================================================== */
 function createPlayer(container, trace, algorithm, render, finalRender) {
   const N = trace, n = N.length;
@@ -239,7 +239,7 @@ function createPlayer(container, trace, algorithm, render, finalRender) {
   const range = $("input[type=range]", box), now = $(".now", box);
   const playBtn = $("[data-a=play]", box), sndBtn = $("[data-a=snd]", box), speed = $("[data-a=speed]", box);
   let k = 0, timer = null, sound = false, actx = null;
-  // vlerat ne hapin k = rruga nga nyja k deri te rrenja
+  // the values at step k = the path from node k up to the root
   function assignments(idx) {
     const m = new Map();
     for (let i = idx; i >= 0 && i < n; i = N[i][1]) if (!m.has(N[i][6])) m.set(N[i][6], N[i][7]);
@@ -282,7 +282,7 @@ function createPlayer(container, trace, algorithm, render, finalRender) {
 }
 
 /* =====================================================================
-   KOMPONENTE: mates i f, landscape
+   COMPONENTS: f meter, landscape
    ===================================================================== */
 function meter(el, f, max, label = "f(s)") {
   const r = 110, cx = 150, cy = 140, frac = Math.min(1, f / Math.max(1, max));
@@ -321,7 +321,7 @@ function renderLandscape(el, L, ratio) {
         <div class="histx"><span>f = 0</span><span>mean ${H.mean}</span><span>${H.max}</span></div>
         <div class="big-ratio">${ratio}</div></div>
     </div>`;
-  // kashta: nje pike per cdo gjendje, ngjyra sipas f
+  // the haystack: one dot per state, coloured by f
   const cv = $(".hay", el), ctx = cv.getContext("2d");
   const all = []; H.histogram.forEach(([f, c]) => { for (let i = 0; i < c; i++) all.push(f); });
   shuffle(all);
@@ -339,7 +339,7 @@ function renderLandscape(el, L, ratio) {
 }
 
 /* =====================================================================
-   GRAFI RRETHOR (Golfers): lojtaret ne rreth, takimet si vija
+   RING GRAPH (Golfers): players on a circle, meetings as lines
    ===================================================================== */
 function ring(svg, n, weeks, opts = {}) {
   svg.innerHTML = "";
@@ -387,7 +387,7 @@ $("#gDomain").innerHTML = Array(32).fill("<span></span>").join("");
     $("#gSeatInfo").innerHTML = `<span style="font-family:var(--serif);font-size:22px">X<sub>1,${+c.dataset.k + 1},${+c.dataset.s + 1}</sub> = <b style="color:var(--accent)">${c.textContent}</b></span>`;
   });
 })();
-// objective demo: java 1 + java te rastesishme
+// objective demo: week 1 + random weeks
 (function golfObjective() {
   let weeks = [EX_WEEK1];
   const randWeek = () => { const p = shuffle([...Array(32).keys()]); return Array.from({ length: 8 }, (_, k) => p.slice(k * 4, k * 4 + 4)); };
@@ -579,7 +579,7 @@ function sudokuObjective() {
   }
   $("#sObjRnd").onclick = () => { grid = p.map(v => v || 1 + Math.floor(Math.random() * 9)); draw(); };
   $("#sObjFix").onclick = () => {
-    // rregullojme nje rresht qe ka perseritje: qelizat bosh marrin shifrat qe mungojne
+    // fix one row that has repeats: its empty cells get the missing digits
     for (let r = 0; r < 9; r++) {
       const cells = UNITS[r];
       if (new Set(cells.map(i => grid[i])).size === 9) continue;
@@ -711,7 +711,7 @@ flow($("#lFlow"), [
   const n = 5, base = cyclic(n), perm = [3, 5, 1, 4, 2], rows = [2, 4, 0, 3, 1];
   const scrambled = []; rows.forEach(r => base.slice(r * n, r * n + n).forEach(v => scrambled.push(perm[v - 1])));
   latinBoard($("#lSymA"), n, scrambled);
-  // normalizim: riemertim qe rreshti 1 te jete 1..n, pastaj rendisim rreshtat sipas kolones se pare
+  // normalise: relabel so row 1 is 1..n, then sort the rows by the first column
   const map = {}; scrambled.slice(0, n).forEach((v, i) => map[v] = i + 1);
   const relabeled = scrambled.map(v => map[v]);
   const rs = Array.from({ length: n }, (_, r) => relabeled.slice(r * n, r * n + n)).sort((a, b) => a[0] - b[0]).flat();
@@ -756,7 +756,7 @@ flow($("#lFlow"), [
   $("#lPlayN").onchange = () => { n = +$("#lPlayN").value; rnd(); };
   rnd();
 })();
-// IDDFS: 4 peme te vogla, kufiri L rritet
+// IDDFS: 4 small trees, the limit L grows
 (function iddfsDemo() {
   const el = $("#lIdExplain");
   el.innerHTML = `<div class="idd">${[0, 1, 2, 3].map(L => `<div class="it"><svg viewBox="0 0 200 90"></svg><b>L = ${L}</b>
@@ -994,6 +994,6 @@ $("#raceRun").onclick = async () => {
   </table></div><div class="cap">* complete on finite trees (all our CSPs are finite)</div>`;
 })();
 
-/* ---------------- fillimi ---------------- */
+/* ---------------- start ---------------- */
 const [p0, a0] = location.hash.slice(1).split("/");
 go(p0 || "home", a0);

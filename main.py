@@ -1,13 +1,13 @@
 """
-SEARCH LAB - Detyra e pare semestrale: Teknikat e Painformuara te Kerkimit
+SEARCH LAB - Assignment 1: Uninformed Search Techniques (command-line program)
 
-Perdorimi:
-    python main.py                      -> menu interaktive
-    python main.py golfers [g p w]      -> Social Golfers me DFS (default 8 4, pyet "sa java?")
-    python main.py sudoku [easy|medium|hard|extreme|<81 shifra>]
+Usage:
+    python main.py                      -> interactive menu
+    python main.py golfers [g p w]      -> Social Golfers with DFS (default 8 4, asks "how many weeks?")
+    python main.py sudoku [easy|medium|hard|extreme|<81 digits>]
     python main.py latin [n]
     python main.py trees
-    python main.py race                 -> gara DFS vs BFS vs IDDFS ne te tre problemet
+    python main.py race                 -> race DFS vs BFS vs IDDFS on all three problems
 """
 
 import sys

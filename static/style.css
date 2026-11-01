@@ -237,7 +237,7 @@ textarea { width: 100%; min-height: 64px; font: 13px var(--mono); border: 1px so
 .err { color: var(--bad); font-size: 14px; }
 footer { color: var(--muted); font-size: 13px; text-align: center; padding: 30px 16px; border-top: 1px solid var(--line); }
 
-/* permbajtja e gjere (pemet) nuk duhet ta zgjeroje faqen */
+/* wide content (trees) must not widen the page */
 .layout > div, .req, .two > *, .player { min-width: 0; }
 .river { min-width: 170px; }
 @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }

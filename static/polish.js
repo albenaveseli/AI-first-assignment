@@ -1,12 +1,12 @@
 "use strict";
 /* =====================================================================
-   POLISH - efektet vizuale (nuk ndryshon asnje algoritem)
+   POLISH - visual effects (does not change any algorithm)
    ===================================================================== */
 (function () {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cssv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
-  /* 1. shiriti i progresit te leximit */
+  /* 1. reading progress bar */
   const bar = document.getElementById("progress");
   const onScroll = () => {
     const max = document.documentElement.scrollHeight - innerHeight;
@@ -14,7 +14,7 @@
   };
   addEventListener("scroll", onScroll, { passive: true });
 
-  /* 2. sfondi i hyrjes: nyje qe levizin dhe lidhen kur jane afer */
+  /* 2. hero background: drifting nodes that connect when close */
   (function heroBackground() {
     const cv = document.getElementById("heroBg");
     if (!cv || reduce) return;
@@ -43,13 +43,13 @@
     })();
   })();
 
-  /* 3. seksionet shfaqen butesisht gjate scroll-it */
+  /* 3. sections fade in while scrolling */
   if (!reduce && "IntersectionObserver" in window) {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .06 });
     document.querySelectorAll(".req, .ptitle, .hero > div").forEach(el => { el.classList.add("reveal"); io.observe(el); });
   }
 
-  /* 4. numrat "numerojne" deri te vlera */
+  /* 4. numbers "count up" to their value */
   function countUp(el) {
     const txt = el.textContent.trim();
     if (!/^[\d,]+$/.test(txt) || el.dataset.counted) return;
@@ -64,7 +64,7 @@
     })();
   }
 
-  /* 5. pemet: zoom dhe zvarritje */
+  /* 5. trees: zoom and drag */
   function treeTools(wrap) {
     const svg = wrap.querySelector("svg");
     if (!svg || wrap.dataset.tools) return;
@@ -88,7 +88,7 @@
     wrap.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); z = Math.max(.2, Math.min(3, z * (e.deltaY < 0 ? 1.1 : .9))); apply(); }, { passive: false });
   }
 
-  /* 6. golfers: "Play weeks" ndez javet nje nga nje */
+  /* 6. golfers: "Play weeks" lights the weeks up one by one */
   function weekPlayer(slider) {
     if (slider.dataset.player) return;
     slider.dataset.player = 1;
@@ -105,7 +105,7 @@
     };
   }
 
-  /* vezhgojme cdo permbajtje te re qe shtohet ne faqe */
+  /* watch every new piece of content added to the page */
   const scan = root => {
     if (!(root instanceof Element)) return;
     root.querySelectorAll(".kpi b, .hero-stats b").forEach(countUp);

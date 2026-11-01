@@ -1,4 +1,4 @@
-/* ================= polish: dizajni perfundimtar ================= */
+/* ================= polish: final design ================= */
 body {
   background:
     radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
@@ -7,11 +7,11 @@ body {
   background-attachment: fixed;
 }
 
-/* shiriti i progresit te leximit */
+/* reading progress bar */
 .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 30;
   background: linear-gradient(90deg, var(--w1), var(--accent), var(--w3)); transition: width .1s linear; }
 
-/* hyrja */
+/* hero */
 .hero { position: relative; }
 .hero-bg { position: absolute; inset: -20px -16px; z-index: -1; width: calc(100% + 32px); height: calc(100% + 40px); opacity: .55; pointer-events: none; }
 .hero h1 em { background: linear-gradient(100deg, var(--accent), var(--w7), var(--w3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -21,13 +21,13 @@ body {
 .hero-art { filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--accent) 25%, transparent)); }
 .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
 
-/* titujt e problemeve me numer dekorativ */
+/* problem titles with a decorative number */
 .ptitle { position: relative; overflow: hidden; }
 .ptitle::after { content: attr(data-n); position: absolute; right: 0; top: -30px; font-family: var(--serif); font-weight: 700;
   font-size: 190px; line-height: 1; color: var(--accent); opacity: .07; pointer-events: none; }
 .ptitle h1 { position: relative; }
 
-/* kartat */
+/* cards */
 .req { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.04); transition: box-shadow .25s; }
 .req:hover { box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 14px 40px rgba(0,0,0,.08); }
 .req-head .badge { background: linear-gradient(90deg, var(--accent-soft), color-mix(in srgb, var(--w7) 18%, var(--paper))); }
@@ -37,21 +37,21 @@ body {
 .kpi { background: var(--paper); position: relative; overflow: hidden; }
 .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); opacity: .5; }
 
-/* butonat */
+/* buttons */
 .btn.primary { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--w7)));
   box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); border: 0; }
 .btn.primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .btn { transition: transform .15s, border-color .15s, filter .15s; }
 
-/* shfaqja gjate scroll-it */
+/* reveal on scroll */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
 .reveal.in { opacity: 1; transform: none; }
 
-/* matrica e kerkesave */
+/* requirements matrix */
 .matrix td.cell .check { transition: transform .2s; }
 .matrix td.cell:hover .check { transform: scale(1.25); }
 
-/* pemet: zoom */
+/* trees: zoom */
 .tree-tools { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 6px; }
 .tree-tools .btn { padding: 4px 10px; font-size: 13px; }
 .tree-svg-wrap { cursor: grab; background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 18px 18px; }
@@ -65,11 +65,11 @@ body {
 @keyframes pop { from { transform: scale(.4); opacity: 0; } }
 .latin .c { box-shadow: 0 2px 6px rgba(0,0,0,.12); }
 
-/* grafi rrethor */
+/* ring graph */
 .ring circle { transition: r .2s; }
 .ring-tools { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 6px; }
 
-/* fundi */
+/* footer */
 footer { background: linear-gradient(180deg, transparent, var(--soft)); }
 
 @media (prefers-reduced-motion: reduce) {

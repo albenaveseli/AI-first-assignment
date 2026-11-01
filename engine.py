@@ -1,18 +1,18 @@
 """
-Motori i perbashket i kerkimit (Search Engine).
+Shared search engine.
 
-Ideja kryesore: algoritmet DFS, BFS dhe IDDFS NUK e dine cili problem po zgjidhet.
-Ata njohin vetem nderfaqen `Problem` me keto pjese:
+Key idea: the DFS, BFS and IDDFS algorithms do NOT know which problem they are solving.
+They only know the `Problem` interface, which has these parts:
 
-    initial_state()          -> gjendja fillestare (disa variabla mund te jene te vendosura)
-    next_variable(state)     -> variabla e radhes qe duhet vendosur (None = gjendja eshte e plote)
-    values(state, var)       -> vlerat nga DOMAIN-i qe NUK e shkelin asnje kufizim (pruning)
-    assign / unassign        -> vendos / heq nje vlere (perdoret nga DFS dhe IDDFS)
-    copy(state)              -> kopje e gjendjes (perdoret nga BFS, qe mban shume gjendje njekohesisht)
-    objective(state)         -> f(s) = numri i shkeljeve te kufizimeve; f = 0 do te thote zgjidhje
+    initial_state()          -> the start state (some variables may already be assigned)
+    next_variable(state)     -> the next variable to assign (None = the state is complete)
+    values(state, var)       -> the DOMAIN values that break NO constraint (pruning)
+    assign / unassign        -> set / remove a value (used by DFS and IDDFS)
+    copy(state)              -> a copy of the state (used by BFS, which keeps many states at once)
+    objective(state)         -> f(s) = number of constraint violations; f = 0 means a solution
 
-Backtracking = kur nje variabel nuk ka asnje vlere te vlefshme, degen e braktisim
-dhe kthehemi mbrapa (DFS/IDDFS) ose thjesht nuk e zgjerojme me (BFS).
+Backtracking = when a variable has no valid value left, we abandon that branch
+and go back (DFS/IDDFS) or simply stop expanding it (BFS).
 """
 
 import sys
@@ -23,7 +23,7 @@ sys.setrecursionlimit(20000)
 
 
 class Problem:
-    """Nderfaqja qe duhet ta implementoje cdo problem."""
+    """The interface every problem must implement."""
 
     name = "Problem"
 
@@ -49,29 +49,29 @@ class Problem:
         raise NotImplementedError
 
     def depth_bound(self):
-        """Sa variabla jane per t'u vendosur (thellesia maksimale e pemes). Per IDDFS."""
+        """How many variables still have to be assigned (maximum tree depth). Used by IDDFS."""
         raise NotImplementedError
 
     def label(self, var, value):
-        """Teksti i shkurter i nje hapi, p.sh. 'r2c3=5'. Perdoret ne vizualizim."""
+        """Short text for one step, e.g. 'r2c3=5'. Used in the visualisation."""
         return f"{var}={value}"
 
 
 class SearchStopped(Exception):
-    """Ngritet kur kalohet kufiri i kohes ose i nyjeve."""
+    """Raised when the time limit or the node limit is exceeded."""
 
 
 class Stats:
-    """Statistikat e nje ekzekutimi. Keto i krahasojme ne 'garen e algoritmeve'."""
+    """Statistics of one run. These are what we compare in the 'algorithm race'."""
 
     def __init__(self, algorithm):
         self.algorithm = algorithm
-        self.nodes = 0           # sa nyje (gjendje) jane gjeneruar
-        self.backtracks = 0      # sa here nje dege ka perfunduar pa rrugedalje
-        self.max_memory = 0      # DFS/IDDFS: thellesia max e stack-ut; BFS: madhesia max e radhes
-        self.iterations = 0      # vetem per IDDFS: sa kufij thellesie u provuan
+        self.nodes = 0           # how many nodes (states) were generated
+        self.backtracks = 0      # how many times a branch ended with no way forward
+        self.max_memory = 0      # DFS/IDDFS: max stack depth; BFS: max queue size
+        self.iterations = 0      # IDDFS only: how many depth limits were tried
         self.seconds = 0.0
-        self.status = "pa filluar"  # "zgjidhje", "pa zgjidhje", "u nderpre"
+        self.status = "pa filluar"  # "zgjidhje" (solved), "pa zgjidhje" (no solution), "u nderpre" (stopped)
         self.solution = None
 
     def as_dict(self):
@@ -95,7 +95,7 @@ class Stats:
 
 
 class Tracer:
-    """Regjistron pemen e kerkimit (cdo nyje me prindin e saj) per vizualizim."""
+    """Records the search tree (every node with its parent) for the visualisation."""
 
     def __init__(self, limit=4000):
         self.limit = limit
@@ -114,7 +114,7 @@ class Tracer:
 
 
 class _Guard:
-    """Kontrollon kufirin e kohes dhe te nyjeve."""
+    """Enforces the time limit and the node limit."""
 
     def __init__(self, stats, time_limit, node_limit):
         self.stats = stats
@@ -131,17 +131,17 @@ class _Guard:
 
 
 # ---------------------------------------------------------------------------
-# 1) DEPTH FIRST SEARCH me Backtracking
+# 1) DEPTH-FIRST SEARCH with Backtracking
 # ---------------------------------------------------------------------------
 def dfs(problem, time_limit=None, node_limit=None, tracer=None):
-    """Shko sa me thelle ne nje dege; kur ngec, kthehu mbrapa (backtrack)."""
+    """Go as deep as possible along one branch; when stuck, go back (backtrack)."""
     stats = Stats("DFS")
     guard = _Guard(stats, time_limit, node_limit)
     state = problem.initial_state()
 
     def recurse(depth, parent_id):
         var = problem.next_variable(state)
-        if var is None:                       # te gjitha variablat jane vendosur
+        if var is None:                       # every variable has been assigned
             if tracer:
                 tracer.mark(parent_id, "goal")
             return True
@@ -153,8 +153,8 @@ def dfs(problem, time_limit=None, node_limit=None, tracer=None):
             problem.assign(state, var, value)
             if recurse(depth + 1, nid):
                 return True
-            problem.unassign(state, var)      # BACKTRACK: zhbejme vendimin
-        stats.backtracks += 1                 # asnje vlere nuk funksionoi
+            problem.unassign(state, var)      # BACKTRACK: undo the decision
+        stats.backtracks += 1                 # no value worked
         if tracer:
             tracer.mark(parent_id, "dead")
         return False
@@ -163,15 +163,15 @@ def dfs(problem, time_limit=None, node_limit=None, tracer=None):
 
 
 # ---------------------------------------------------------------------------
-# 2) BREADTH FIRST SEARCH me Backtracking (pruning)
+# 2) BREADTH-FIRST SEARCH with Backtracking (pruning)
 # ---------------------------------------------------------------------------
 def bfs(problem, time_limit=None, node_limit=None, tracer=None):
-    """Eksploro nivel pas niveli me nje radhe (FIFO).
+    """Explore level by level with a FIFO queue.
 
-    BFS nuk "kthehet mbrapa" si DFS, sepse i mban te gjitha deget njekohesisht.
-    Backtracking-u ketu do te thote: nje gjendje qe nuk ka asnje vlere te vlefshme
-    per variablen e radhes eshte RRUGE E VDEKUR. E hedhim dhe nuk e zgjerojme me.
-    Edhe vlerat qe shkelin kufizimet nuk futen kurre ne radhe.
+    BFS does not "go back" like DFS, because it keeps every branch at the same time.
+    Here backtracking means: a state that has no valid value for its next variable
+    is a DEAD END. We drop it and never expand it again.
+    Values that break a constraint are never put in the queue either.
     """
     stats = Stats("BFS")
     guard = _Guard(stats, time_limit, node_limit)
@@ -190,7 +190,7 @@ def bfs(problem, time_limit=None, node_limit=None, tracer=None):
                 return True
             children = list(problem.values(state, var))
             if not children:
-                stats.backtracks += 1         # rruge e vdekur -> braktiset
+                stats.backtracks += 1         # dead end -> abandoned
                 if tracer:
                     tracer.mark(nid, "dead")
             for value in children:
@@ -206,13 +206,13 @@ def bfs(problem, time_limit=None, node_limit=None, tracer=None):
 
 
 # ---------------------------------------------------------------------------
-# 3) ITERATIVE DEEPENING DFS me Backtracking
+# 3) ITERATIVE DEEPENING DFS with Backtracking
 # ---------------------------------------------------------------------------
 def iddfs(problem, time_limit=None, node_limit=None, tracer=None):
-    """DFS me kufi thellesie L = 0, 1, 2, ...  Cdo iteracion fillon nga e para.
+    """DFS with a depth limit L = 0, 1, 2, ...  Every iteration starts over from the root.
 
-    Perfitimi: memorie e vogel si DFS + garanci si BFS (gjen zgjidhjen me te cekte).
-    Kostoja: nivelet e siperme rivizitohen ne cdo iteracion.
+    Benefit: small memory like DFS + the guarantee of BFS (finds the shallowest solution).
+    Cost: the upper levels are revisited in every iteration.
     """
     stats = Stats("IDDFS")
     guard = _Guard(stats, time_limit, node_limit)
@@ -225,7 +225,7 @@ def iddfs(problem, time_limit=None, node_limit=None, tracer=None):
                 tracer.mark(parent_id, "goal")
             return "found"
         if depth == limit:
-            return "cutoff"                   # u arrit kufiri, mund te kete me thelle
+            return "cutoff"                   # limit reached, there may be more below
         stats.max_memory = max(stats.max_memory, depth + 1)
         any_cutoff = False
         for value in problem.values(state, var):
@@ -253,7 +253,7 @@ def iddfs(problem, time_limit=None, node_limit=None, tracer=None):
             if r == "found":
                 holder["state"] = state
                 return True
-            if r == "failure":                # asgje nuk u pre nga kufiri -> nuk ka zgjidhje
+            if r == "failure":                # nothing was cut off by the limit -> no solution
                 return False
         return False
 
@@ -276,7 +276,7 @@ ALGORITHMS = {"DFS": dfs, "BFS": bfs, "IDDFS": iddfs}
 
 
 def race(problem_factory, time_limit=10, node_limit=2_000_000):
-    """Gara e algoritmeve: i njejti problem, tre algoritme, te njejtat kufij."""
+    """Algorithm race: the same problem, three algorithms, the same limits."""
     results = []
     for name, algo in ALGORITHMS.items():
         stats = algo(problem_factory(), time_limit=time_limit, node_limit=node_limit)

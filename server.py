@@ -1,11 +1,11 @@
 """
-SEARCH LAB - serveri web (FastAPI)
+SEARCH LAB - web server (FastAPI)
 
     pip install -r requirements.txt
-    python server.py              ->  hap http://127.0.0.1:8000
+    python server.py              ->  open http://127.0.0.1:8000
 
-Cdo kerkese ekzekuton algoritmin LIVE dhe kthen: zgjidhjen, statistikat,
-gjurmen e kerkimit (per animacion) dhe landscape-in.
+Every request runs the algorithm LIVE and returns: the solution, the statistics,
+the search trace (for the animation) and the landscape.
 """
 
 import math
@@ -27,8 +27,8 @@ app = FastAPI(title="Search Lab", description="Uninformed search techniques")
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(HERE, "static")
 
-TRACE_LIMIT = 2500      # sa nyje te gjurmes dergohen per animacion
-MAX_TIME = 30           # kufiri i kohes per nje kerkese (sekonda)
+TRACE_LIMIT = 2500      # how many trace nodes are sent for the animation
+MAX_TIME = 30           # time limit for one request (seconds)
 
 
 def run(problem, algo, time_limit, node_limit=None, trace=True):
@@ -50,7 +50,7 @@ def stats_en(stats):
 
 
 def sizes(rows, labels):
-    """Madhesite e landscape me etiketa ne anglisht (ne te njejtin rend si ne modul)."""
+    """Landscape sizes with English labels (in the same order as in the module)."""
     return [{"label": lab, "log10": None if b is None else round(b, 2)} for lab, (_, b) in zip(labels, rows)]
 
 
@@ -161,7 +161,7 @@ def api_latin(n: int = Query(5, ge=1, le=12), algo: str = "IDDFS", symmetry: boo
     sol = stats.solution
     fallback = None
     if not sol and algo == "IDDFS":
-        # iteracioni i fundit i IDDFS = DFS i plote
+        # the last IDDFS iteration = a full DFS
         fb, _ = run(latin_square.LatinSquare(n, symmetry=symmetry), "DFS", 10, trace=False)
         fallback = {"stats": stats_en(fb), "solution": fb.solution}
     return {
@@ -217,7 +217,7 @@ def api_tree_rws(max_work: int = Query(4, ge=2, le=7), max_off: int = Query(2, g
 
 
 # ---------------------------------------------------------------------------
-# GARA
+# RACE
 # ---------------------------------------------------------------------------
 RACES = {
     "golfers": lambda: golfers.SocialGolfers(8, 4, 5),
@@ -235,6 +235,15 @@ def api_race(name: str, algo: str = "DFS"):
 
 
 # ---------------------------------------------------------------------------
+@app.middleware("http")
+async def no_stale_cache(request, call_next):
+    """Tell the browser to always check for the newest page files (no stale app.js after an update)."""
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

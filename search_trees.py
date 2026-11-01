@@ -1,15 +1,15 @@
 """
 4. SEARCH TREES - 8-Puzzle, Missionaries & Cannibals, Rotating Workforce Scheduling
 
-Nje SEARCH TREE (peme kerkimi) ndertohet keshtu:
-  - rrenja = gjendja fillestare
-  - femijet e nje nyje = gjendjet qe arrihen me nje veprim (successor function)
-  - nje nyje shenohet:
-        GOAL      -> gjendje perfundimtare (zgjidhje)
-        INVALID   -> shkel nje kufizim (p.sh. kanibalet i hane misionaret) -> nuk zgjerohet
-        REPEATED  -> gjendja eshte pare me pare -> nuk zgjerohet (perndryshe pema behet e pafundme)
-        NORMAL    -> zgjerohet me tej
-Pema ndertohet me BFS (nivel pas niveli) ose DFS.
+A SEARCH TREE is built like this:
+  - root = the start state
+  - the children of a node = the states reachable with one action (successor function)
+  - every node is marked:
+        GOAL      -> final state (a solution)
+        INVALID   -> breaks a constraint (e.g. the cannibals eat the missionaries) -> not expanded
+        REPEATED  -> the state was seen before -> not expanded (otherwise the tree becomes infinite)
+        NORMAL    -> expanded further
+The tree is built with BFS (level by level) or DFS.
 """
 
 from collections import deque
@@ -30,7 +30,7 @@ class TreeNode:
 
 
 def build_tree(problem, strategy="bfs", max_depth=50, max_nodes=500, stop_at_goal=True):
-    """Ndertuesi i perbashket i pemes. `problem` ka: start, successors(s), is_goal(s), show(s)."""
+    """The shared tree builder. `problem` has: start, successors(s), is_goal(s), show(s)."""
     root = TreeNode(0, None, "start", problem.start, 0)
     nodes = [root]
     seen = {problem.start}
@@ -65,10 +65,10 @@ def build_tree(problem, strategy="bfs", max_depth=50, max_nodes=500, stop_at_goa
                 else:
                     children.append(child)
         if strategy == "dfs":
-            children.reverse()            # qe femija i pare te zgjerohet i pari
+            children.reverse()            # so that the first child is expanded first
         frontier.extend(children)
 
-    # shenojme rrugen e zgjidhjes (nga goal deri te rrenja)
+    # mark the solution path (from the goal back to the root)
     n = goal_node
     while n:
         n.on_solution = True
@@ -115,9 +115,9 @@ def tree_to_json(problem, nodes):
 
 # ===========================================================================
 # 8-PUZZLE
-#   Gjendja : tuple me 9 numra (0 = vendi bosh), rresht pas rreshti
-#   Veprimet: levizja e vendit bosh LART / POSHTE / MAJTAS / DJATHTAS
-#   Goal    : 1 2 3 / 4 5 6 / 7 8 _
+#   State  : a tuple of 9 numbers (0 = the blank), row by row
+#   Actions: move the blank UP / DOWN / LEFT / RIGHT (LART / POSHTE / MAJTAS / DJATHTAS)
+#   Goal   : 1 2 3 / 4 5 6 / 7 8 _
 # ===========================================================================
 class EightPuzzle:
     name = "8-Puzzle"
@@ -136,7 +136,7 @@ class EightPuzzle:
         for name, d in self.MOVES:
             if (name == "LART" and r == 0) or (name == "POSHTE" and r == 2) or \
                (name == "MAJTAS" and c == 0) or (name == "DJATHTAS" and c == 2):
-                continue                     # levizje jashte tabeles: nuk ekziston
+                continue                     # a move off the board: does not exist
             t = list(s)
             t[z], t[z + d] = t[z + d], t[z]
             yield name, tuple(t), True
@@ -149,7 +149,7 @@ class EightPuzzle:
 
     @staticmethod
     def is_solvable(s):
-        """Gjysma e gjendjeve te 8-puzzle NUK arrijne dot goal-in (paritet i inversioneve)."""
+        """Half of all 8-puzzle states can NOT reach the goal (inversion parity)."""
         v = [x for x in s if x]
         inv = sum(1 for i in range(len(v)) for j in range(i + 1, len(v)) if v[i] > v[j])
         return inv % 2 == 0
@@ -157,10 +157,10 @@ class EightPuzzle:
 
 # ===========================================================================
 # MISSIONARIES AND CANNIBALS
-#   Gjendja : (M, C, B) = misionare dhe kanibale ne bregun e MAJTE, B = 1 nese varka eshte majtas
-#   Veprimet: varka merr (1M), (2M), (1C), (2C), (1M+1C) dhe kalon lumin
-#   Kufizimi: ne asnje breg kanibalet s'mund te jene me shume se misionaret (nese ka misionare)
-#   Goal    : (0, 0, 0) - te gjithe ne bregun e djathte
+#   State     : (M, C, B) = missionaries and cannibals on the LEFT bank, B = 1 if the boat is on the left
+#   Actions   : the boat carries (1M), (2M), (1C), (2C), (1M+1C) across the river
+#   Constraint: on no bank may cannibals outnumber missionaries (if there are missionaries there)
+#   Goal      : (0, 0, 0) - everyone on the right bank
 # ===========================================================================
 class MissionariesCannibals:
     name = "Missionaries & Cannibals"
@@ -181,11 +181,11 @@ class MissionariesCannibals:
 
     def successors(self, s):
         m, c, b = s
-        sign = -1 if b == 1 else 1           # varka majtas -> njerezit ikin nga e majta
+        sign = -1 if b == 1 else 1           # boat on the left -> people leave the left bank
         for dm, dc in self.loads:
             nm, nc = m + sign * dm, c + sign * dc
             if not (0 <= nm <= self.M and 0 <= nc <= self.C):
-                continue                     # s'ka aq njerez ne ate breg: veprimi s'ekziston
+                continue                     # not that many people on that bank: the action does not exist
             action = f"{dm}M{dc}C {'->' if b == 1 else '<-'}"
             yield action, (nm, nc, 1 - b), self.is_safe(nm, nc)
 
@@ -197,19 +197,19 @@ class MissionariesCannibals:
 
 # ===========================================================================
 # ROTATING WORKFORCE SCHEDULING (RWS)
-#   Instance e vogel (e percaktuar nga ne, sepse detyra s'jep te dhena):
-#     3 punetore, java 7-ditore, nderrime: D (dite), N (nate), - (pushim)
-#     Kerkesa per cdo dite: 1 D, 1 N, 1 pushim  (pra cdo dite: nje permutacion i {D, N, -})
-#   "Rotating": orari ka 3 rreshta (java 1, 2, 3). Punetori 1 nis me rreshtin 1,
-#     punetori 2 me rreshtin 2, ... dhe cdo jave kalojne ne rreshtin tjeter (ciklikisht).
-#     Pra 21 ditet lexohen si nje varg i vetem ciklik: rreshti1 + rreshti2 + rreshti3 + (perseri rreshti1)
-#   Kufizimet (rregulla te punes):
-#     R1. Pas nderrimit te NATES nuk lejohet nderrimi i DITES (duhet pushim).
-#     R2. Jo me shume se 4 dite pune radhazi.
-#     R3. Jo me shume se 2 dite pushim radhazi.
-#   Gjendja : tuple me kolonat e caktuara deri tani; nje kolone = (nderrimi i rreshtit 1, 2, 3)
-#   Veprimi : cakto diten e radhes (6 permutacione te mundshme)
-#   Goal    : te 7 ditet te caktuara + kufizimet ciklike te plotesuara
+#   A small instance (defined by us, because the assignment gives no data):
+#     3 workers, a 7-day week, shifts: D (day), N (night), - (day off)
+#     Demand for every day: 1 D, 1 N, 1 day off  (so every day is a permutation of {D, N, -})
+#   "Rotating": the roster has 3 rows (week 1, 2, 3). Worker 1 starts on row 1,
+#     worker 2 on row 2, ... and every week they move to the next row (cyclically).
+#     So the 21 days are read as one cyclic sequence: row1 + row2 + row3 + (row1 again)
+#   Constraints (work rules):
+#     R1. A NIGHT shift may not be followed by a DAY shift (a rest is needed).
+#     R2. No more than 4 work days in a row.
+#     R3. No more than 2 days off in a row.
+#   State : a tuple of the columns assigned so far; one column = (shift of row 1, 2, 3)
+#   Action: assign the next day (6 possible permutations)
+#   Goal  : all 7 days assigned + the cyclic constraints satisfied
 # ===========================================================================
 class RotatingWorkforce:
     name = "Rotating Workforce Scheduling"
@@ -223,16 +223,16 @@ class RotatingWorkforce:
         self.start = ()
 
     def sequence(self, s):
-        """Vargu i plote (21 dite) i nje punetori: rreshti 1, pastaj 2, pastaj 3."""
+        """The full sequence (21 days) of one worker: row 1, then 2, then 3."""
         return [s[d][r] for r in range(self.workers) for d in range(len(s))]
 
     def valid(self, s, complete):
         rows = [[col[r] for col in s] for r in range(self.workers)]
         if complete:
             seq = [x for row in rows for x in row]
-            seqs = [seq + seq[:self.max_work + 1]]    # ciklik: fundi lidhet me fillimin
+            seqs = [seq + seq[:self.max_work + 1]]    # cyclic: the end wraps around to the start
         else:
-            seqs = rows                              # vetem brenda cdo rreshti (javet ende s'jane mbyllur)
+            seqs = rows                              # only inside each row (the weeks are not closed yet)
         for q in seqs:
             for a, b in zip(q, q[1:]):
                 if a == "N" and b == "D":            # R1

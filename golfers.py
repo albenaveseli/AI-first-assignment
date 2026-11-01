@@ -1,24 +1,24 @@
 """
-1. SOCIAL GOLFERS PROBLEM - zgjidhet me DFS + Backtracking
+1. SOCIAL GOLFERS PROBLEM - solved with DFS + Backtracking
 
-MODELIMI (rasti i pergjithshem: g grupe, p lojtare per grup, w java, n = g*p)
-  Variablat : X(j, k, s) = lojtari ne javen j, grupin k, vendin s
-              j = 0..w-1, k = 0..g-1, s = 0..p-1          -> w*g*p variabla
-  Domain    : D = {0, 1, ..., n-1}
-  Kufizimet :
-     K1. Ne nje jave, cdo lojtar luan saktesisht nje here.
-     K2. Dy lojtare takohen (jane ne te njejtin grup) se shumti NJE here gjate gjithe javeve.
-  Thyerja e simetrise (nuk e ndryshon pergjigjen, vetem e shkurton kerkimin):
-     S1. Java 1 merret fikse (nga shembulli i detyres per 8x4).
-     S2. Brenda grupit lojtaret jane ne rend rrites.
-     S3. Lojtari i pare i cdo grupi = lojtari me i vogel qe ende s'ka luajtur ate jave.
-  Objective : f(s) = sum mbi cdo cift (a,b) max(0, takime(a,b) - 1)
-                   + sum mbi cdo jave (lojtare te perseritur ne ate jave)
-              f(s) = 0  <=>  orari eshte i vlefshem
+MODEL (general case: g groups, p players per group, w weeks, n = g*p)
+  Variables  : X(j, k, s) = the player in week j, group k, seat s
+               j = 0..w-1, k = 0..g-1, s = 0..p-1          -> w*g*p variables
+  Domain     : D = {0, 1, ..., n-1}
+  Constraints:
+     C1. In one week, every player plays exactly once.
+     C2. Two players meet (are in the same group) at most ONCE over all weeks.
+  Symmetry breaking (does not change the answer, only shortens the search):
+     S1. Week 1 is fixed (taken from the assignment's example for 8x4).
+     S2. Inside a group, players are in increasing order.
+     S3. The first player of each group = the smallest player who has not played yet that week.
+  Objective  : f(s) = sum over every pair (a,b) of max(0, meetings(a,b) - 1)
+                    + sum over every week of (players repeated in that week)
+               f(s) = 0  <=>  the schedule is valid
 
-PERGJIGJJA "Sa java?" (kufiri i siperm):
-  Ne cdo jave nje lojtar takon p-1 lojtare te rinj. Gjithsej mund te takoje n-1.
-  Pra w <= floor((n-1)/(p-1)).  Per 32 lojtare, grupe me 4: (32-1)/(4-1) = 10.33 -> 10 java.
+ANSWER to "How many weeks?" (upper bound):
+  Each week a player meets p-1 new players. In total they can meet n-1.
+  So w <= floor((n-1)/(p-1)).  For 32 players in groups of 4: (32-1)/(4-1) = 10.33 -> 10 weeks.
 """
 
 import math
@@ -26,7 +26,7 @@ import random
 
 from engine import Problem
 
-# Java 1 sipas shembullit te detyres (8 grupe me nga 4 lojtare)
+# Week 1 as in the assignment's example (8 groups of 4 players)
 EXAMPLE_WEEK1 = [
     [0, 1, 2, 3], [4, 5, 22, 23], [6, 7, 20, 21], [8, 25, 26, 27],
     [9, 10, 11, 24], [12, 13, 15, 30], [14, 28, 29, 31], [16, 17, 18, 19],
@@ -36,14 +36,14 @@ EXAMPLE_WEEK1 = [
 def upper_bound(g, p):
     n = g * p
     if p == 1:
-        return math.inf   # lojtaret s'takohen kurre
+        return math.inf   # players never meet
     if g == 1:
-        return 1          # te gjithe ne nje grup: vetem nje jave
+        return 1          # everyone in one group: only one week
     return (n - 1) // (p - 1)
 
 
 def bits(mask):
-    """Liston lojtaret (indekset e biteve 1) ne nje bitmask, nga me i vogli."""
+    """Lists the players (indices of the 1-bits) in a bitmask, smallest first."""
     while mask:
         low = mask & -mask
         yield low.bit_length() - 1
@@ -51,17 +51,17 @@ def bits(mask):
 
 
 class GolfState:
-    """Orari + strukturat ndihmese qe e bejne kontrollin e kufizimeve te shpejte.
+    """The schedule + helper structures that make constraint checks fast.
 
-    Bashkesite i ruajme si BITMASK: numer i plote ku biti i = lojtari i.
-    P.sh. lojtaret {0, 2, 5} = 0b100101. Bashkimi = |, prerja = &, madhesia = bit_count().
+    Sets are stored as BITMASKS: an integer where bit i = player i.
+    E.g. players {0, 2, 5} = 0b100101. Union = |, intersection = &, size = bit_count().
     """
 
     def __init__(self, n, total, weeks):
-        self.schedule = [-1] * total   # vlera e cdo variable (-1 = e pavendosur)
-        self.filled = 0                # sa variabla jane vendosur
-        self.met = [0] * n             # met[a] = bitmask i lojtareve qe a i ka takuar
-        self.used = [0] * weeks        # used[j] = bitmask i lojtareve qe luajne ne javen j
+        self.schedule = [-1] * total   # the value of every variable (-1 = unassigned)
+        self.filled = 0                # how many variables are assigned
+        self.met = [0] * n             # met[a] = bitmask of the players a has met
+        self.used = [0] * weeks        # used[j] = bitmask of the players playing in week j
 
 
 class SocialGolfers(Problem):
@@ -69,7 +69,7 @@ class SocialGolfers(Problem):
 
     def __init__(self, g=8, p=4, w=10, week1=None, symmetry=True, forward_check=True, seed=None):
         self.g, self.p, self.w = g, p, w
-        # seed != None -> vlerat provohen ne rend te rastesishem (per DFS me rinisje)
+        # seed != None -> values are tried in random order (for DFS with restarts)
         self.rng = random.Random(seed) if seed is not None else None
         self.n = g * p
         self.per_week = g * p
@@ -84,7 +84,7 @@ class SocialGolfers(Problem):
                 week1 = [list(range(k * p, (k + 1) * p)) for k in range(g)]
         self.week1 = week1
 
-    # --- ndihmes: nga indeksi i variables -> (java, grupi, vendi)
+    # --- helper: variable index -> (week, group, seat)
     def decode(self, var):
         j, rest = divmod(var, self.per_week)
         k, s = divmod(rest, self.p)
@@ -110,25 +110,25 @@ class SocialGolfers(Problem):
         return st.filled if st.filled < self.total else None
 
     def group_members(self, st, var):
-        """Lojtaret qe jane tashme ne grupin e kesaj variable."""
+        """The players already sitting in this variable's group."""
         return st.schedule[var - (var % self.p):var]
 
     def values(self, st, var):
         j, k, s = self.decode(var)
         used = st.used[j]
         members = self.group_members(st, var)
-        forbidden = used                          # K1: ka luajtur tashme kete jave
+        forbidden = used                          # C1: already played this week
         for m in members:
-            forbidden |= st.met[m]                # K2: e ka takuar nje anetar te grupit
+            forbidden |= st.met[m]                # C2: has already met a member of the group
         allowed = self.all & ~forbidden
         if self.symmetry:
             if s == 0:
-                # S3: grupi fillon me lojtarin me te vogel te lire -> 1 kandidat i vetem
+                # S3: the group starts with the smallest free player -> a single candidate
                 allowed &= -allowed
             else:
-                start = members[-1] + 1           # S2: rend rrites brenda grupit
+                start = members[-1] + 1           # S2: increasing order inside the group
                 if k == 0 and s == 1 and j >= 2:
-                    # S4: javet jane te nderrueshme -> i rendisim sipas partnerit te dyte te lojtarit 0
+                    # S4: weeks are interchangeable -> order them by player 0's second partner
                     start = max(start, st.schedule[(j - 1) * self.per_week + 1] + 1)
                 allowed &= ~((1 << start) - 1)
         result = []
@@ -141,11 +141,11 @@ class SocialGolfers(Problem):
         return result
 
     def _still_feasible(self, st, var, j, x, members):
-        """FORWARD CHECKING: pas vendosjes se x, a ka ende shprese kjo jave?
-        Cdo lojtar y qe s'ka luajtur ende kete jave duhet:
-          - ose te mund te hyje ne grupin qe po formohet,
-          - ose te kete se paku p-1 partnere te lire qe s'i ka takuar (per grup te ri).
-        Nese jo, dega pritet menjehere (backtracking i hershem)."""
+        """FORWARD CHECKING: after placing x, is this week still possible?
+        Every player y who has not played yet this week must either:
+          - be able to join the group being formed, or
+          - have at least p-1 free partners they have not met (for a new group).
+        If not, the branch is cut immediately (early backtracking)."""
         free = self.all & ~(st.used[j] | (1 << x))
         slots_left = self.p - len(members) - 1
         cand = 0
@@ -187,7 +187,7 @@ class SocialGolfers(Problem):
         j, k, s = self.decode(var)
         return f"W{j + 1}G{k + 1}:{value}"
 
-    # --- Objective function, punon mbi nje orar te plote (liste me w*g*p numra)
+    # --- Objective function, works on a complete schedule (a list of w*g*p numbers)
     def objective(self, st):
         sched = st.schedule if isinstance(st, GolfState) else st
         meet = {}
@@ -205,7 +205,7 @@ class SocialGolfers(Problem):
         return f
 
     def random_state(self, rng):
-        """Orar i rastesishem qe respekton K1 (cdo jave nje permutacion)."""
+        """A random schedule that respects C1 (every week is a permutation)."""
         sched = []
         for _ in range(self.w):
             perm = list(range(self.n))
@@ -230,7 +230,7 @@ def to_text(problem, st):
 def landscape_sizes(g, p, w):
     n = g * p
     log_fact = lambda k: math.lgamma(k + 1) / math.log(10)
-    # menyrat per te ndare n lojtare ne g grupe te pa-renditura me nga p
+    # the number of ways to split n players into g unordered groups of p
     one_week = log_fact(n) - g * log_fact(p) - log_fact(g)
     return [
         (f"Pa kufizime: n^(n*w) = {n}^{n * w}", n * w * math.log10(n)),
@@ -241,7 +241,7 @@ def landscape_sizes(g, p, w):
 
 
 def max_weeks(g, p, time_per_w=20, verbose=True):
-    """Pergjigjja e pyetjes 'Sa java?': provon w = 1, 2, ... deri te kufiri i siperm."""
+    """Answers "How many weeks?": tries w = 1, 2, ... up to the upper bound."""
     from engine import dfs
     best = None
     ub = upper_bound(g, p)
@@ -259,11 +259,11 @@ def max_weeks(g, p, time_per_w=20, verbose=True):
 
 
 def dfs_with_restarts(g, p, w, node_limit=20000, time_limit=120, verbose=True):
-    """DFS me RINISJE TE RASTESISHME.
+    """DFS with RANDOM RESTARTS.
 
-    DFS i thjeshte mund te ngece ne nje dege te keqe qe ne fillim dhe s'del me prej saj.
-    Ketu e ndalojme DFS-ne pas `node_limit` nyjeve dhe e nisim perseri me nje renditje
-    tjeter (te rastesishme) te vlerave. Mbetet DFS + Backtracking, pa asnje heuristike.
+    Plain DFS can get stuck early in a bad branch and never get out of it.
+    Here we stop DFS after `node_limit` nodes and start it again with a different
+    (random) value order. It is still DFS + Backtracking, with no heuristic.
     """
     import time
     from engine import dfs
@@ -282,7 +282,7 @@ def dfs_with_restarts(g, p, w, node_limit=20000, time_limit=120, verbose=True):
             stats.seconds = time.perf_counter() - t0
             return prob, stats
         if stats.status == "pa zgjidhje":
-            return prob, stats          # pema u eksplorua e tera: s'ka zgjidhje
+            return prob, stats          # the whole tree was explored: no solution
         seed += 1
     if verbose:
         print(f"  Nuk u gjet brenda {time_limit}s ({seed} rinisje, {total_nodes:,} nyje)")

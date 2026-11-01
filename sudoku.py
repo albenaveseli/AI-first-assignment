@@ -1,26 +1,26 @@
 """
-2. SUDOKU - zgjidhet me BFS + Backtracking
+2. SUDOKU - solved with BFS + Backtracking
 
-MODELIMI
-  Variablat : X(r,c) per cdo qelize BOSH, r,c = 0..8
-  Domain    : D = {1, ..., 9}
-  Kufizimet : AllDifferent ne cdo rresht, kolone dhe kuti 3x3 (27 kufizime);
-              qelizat e dhena nuk ndryshohen
-  Gjendja   : lista me 81 numra; 0 = qelize bosh
-  Objective : f(s) = shuma mbi 27 njesite (9 - numri_i_vlerave_te_ndryshme_ne_njesi)
-              f(s) = 0  <=>  Sudoku eshte zgjidhur
+MODEL
+  Variables  : X(r,c) for every EMPTY cell, r,c = 0..8
+  Domain     : D = {1, ..., 9}
+  Constraints: AllDifferent in every row, column and 3x3 box (27 constraints);
+               the given cells are never changed
+  State      : a list of 81 numbers; 0 = empty cell
+  Objective  : f(s) = sum over the 27 units of (9 - number_of_distinct_values_in_the_unit)
+               f(s) = 0  <=>  the Sudoku is solved
 
-Lidhja me Latin Square: nje Sudoku i zgjidhur ESHTE katror latin 9x9,
-me nje kufizim shtese per kutite 3x3.
+Link to Latin Square: a solved Sudoku IS a 9x9 Latin square
+with an extra constraint for the 3x3 boxes.
 """
 
 import math
 
 from engine import Problem
 
-# Tri nivele + nje bonus. Niveli eshte matur me numrin e nyjeve qe i duhen BFS-it:
-#   easy ~ 70 nyje | medium ~ 4.6 mije | hard ~ 364 mije ("Golden Nugget")
-#   extreme: Sudoku i Arto Inkala (2012), "me i veshtiri ne bote" - BFS mban ~356 mije gjendje ne memorie.
+# Three levels + a bonus. The level is measured by the number of nodes BFS needs:
+#   easy ~ 70 nodes | medium ~ 4.6 thousand | hard ~ 364 thousand ("Golden Nugget")
+#   extreme: Arto Inkala's Sudoku (2012), "the world's hardest" - BFS holds ~356 thousand states in memory.
 PUZZLES = {
     "easy": "000260701680070090190004500820100040004602900050003028009300074040050036703018000",
     "medium": "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
@@ -28,7 +28,7 @@ PUZZLES = {
     "extreme": "800000000003600000070090200050007000000045700000100030001000068008500010090000400",
 }
 
-# Per secilen qelize: indekset e 20 "fqinjeve" (rreshti, kolona, kutia)
+# For every cell: the indices of its 20 "peers" (row, column, box)
 PEERS = []
 for _i in range(81):
     _r, _c = divmod(_i, 9)
@@ -38,7 +38,7 @@ for _i in range(81):
     _p.discard(_i)
     PEERS.append(tuple(_p))
 
-# 27 njesite: 9 rreshta, 9 kolona, 9 kuti
+# The 27 units: 9 rows, 9 columns, 9 boxes
 UNITS = ([[r * 9 + c for c in range(9)] for r in range(9)] +
          [[r * 9 + c for r in range(9)] for c in range(9)] +
          [[(br + a) * 9 + bc + b for a in range(3) for b in range(3)]
@@ -65,7 +65,7 @@ class Sudoku(Problem):
         return list(state)
 
     def next_variable(self, state):
-        # Renditje fikse (e painformuar): qeliza e pare bosh, rresht pas rreshti
+        # Fixed (uninformed) order: the first empty cell, row by row
         try:
             return state.index(0)
         except ValueError:
@@ -95,12 +95,12 @@ class Sudoku(Problem):
         return [v if v else rng.randint(1, 9) for v in self.puzzle]
 
     def is_valid_start(self):
-        """Kontrollon qe numrat e dhene nuk bien ndesh mes vete."""
+        """Checks that the given numbers do not clash with each other."""
         s = self.puzzle
         return all(s[i] == 0 or all(s[p] != s[i] for p in PEERS[i]) for i in range(81))
 
     def count_solutions(self, limit=2):
-        """DFS qe numeron zgjidhjet (ndalet te `limit`). 1 = Sudoku i mirefillte."""
+        """DFS that counts the solutions (stops at `limit`). 1 = a proper Sudoku."""
         state = self.initial_state()
         count = 0
 
@@ -135,7 +135,7 @@ def landscape_sizes(puzzle):
     s = parse(puzzle) if isinstance(puzzle, str) else puzzle
     empty = s.count(0)
     p = Sudoku(s)
-    # sa vlera mbeten per cdo qelize pas kufizimeve me numrat e dhene
+    # how many values remain for each cell after the constraints with the givens
     pruned = sum(math.log10(len(p.values(s, i))) for i in range(81) if s[i] == 0)
     return [
         (f"Pa kufizime: 9^{empty} (qeliza bosh)", empty * math.log10(9)),

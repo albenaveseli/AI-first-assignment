@@ -1,12 +1,12 @@
 """
-LANDSCAPE: si duket "terreni" i objective function f(s) mbi hapesiren e gjendjeve.
+LANDSCAPE: what the "terrain" of the objective function f(s) looks like over the state space.
 
-Bejme dy gjera:
-  1. Madhesia e hapesires (sa gjendje ekzistojne), e shprehur si 10^x.
-  2. Kampionim: marrim shume gjendje te rastesishme te plota dhe shikojme
-     shperndarjen e f(s). Zgjidhjet (f = 0) zakonisht nuk shfaqen fare,
-     sepse jane "gjilpere ne kashte". Kjo tregon pse na duhet kerkim sistematik
-     me backtracking dhe jo provim i rastesishem.
+We do two things:
+  1. The size of the space (how many states exist), written as 10^x.
+  2. Sampling: we take many random complete states and look at the
+     distribution of f(s). Solutions (f = 0) usually never show up,
+     because they are "a needle in a haystack". This shows why we need a systematic
+     search with backtracking rather than random guessing.
 """
 
 import random
@@ -32,7 +32,7 @@ def print_histogram(result, width=50):
     top = max(c for _, c in hist)
     print(f"  {result['samples']} gjendje te rastesishme | f min={result['min']}  "
           f"mesatarja={result['mean']}  max={result['max']} | zgjidhje te gjetura: {result['zeros']}")
-    # grupojme ne rreth 15 shtylla qe te lexohet lehte
+    # group into about 15 bars so it is easy to read
     lo, hi = result["min"], result["max"]
     step = max(1, (hi - lo + 1) // 15)
     buckets = Counter()
