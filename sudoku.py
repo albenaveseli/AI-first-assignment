@@ -136,7 +136,9 @@ def landscape_sizes(puzzle):
     empty = s.count(0)
     p = Sudoku(s)
     # how many values remain for each cell after the constraints with the givens
-    pruned = sum(math.log10(len(p.values(s, i))) for i in range(81) if s[i] == 0)
+    counts = [len(p.values(s, i)) for i in range(81) if s[i] == 0]
+    # a cell with no possible value means 0 fillings are left (log10 is undefined) -> None
+    pruned = None if 0 in counts else sum(math.log10(c) for c in counts)
     return [
         (f"Pa kufizime: 9^{empty} (qeliza bosh)", empty * math.log10(9)),
         ("Pas heqjes se vlerave qe bien ndesh me te dhenat", pruned),

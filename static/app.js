@@ -684,7 +684,8 @@ $("#sRun").onclick = async () => {
     }, showFinal);
     showFinal();
     const pr = d.landscape.sizes[1].log10;
-    renderLandscape($("#sLand"), d.landscape, `1 in 10<sup>${pr.toFixed(0)}</sup><small>exactly one solution among all fillings left after pruning</small>`);
+    renderLandscape($("#sLand"), d.landscape, pr == null ? `0<small>a cell has no possible value, so no filling can work</small>`
+      : `1 in 10<sup>${pr.toFixed(0)}</sup><small>exactly one solution among all fillings left after pruning</small>`);
   } catch (e) { out.innerHTML = `<p class="err">${e.message}</p>`; }
   $("#sRun").disabled = false;
 };

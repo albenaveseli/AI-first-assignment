@@ -207,7 +207,10 @@ def api_tree_puzzle(start: str = "123046758", strategy: str = "bfs"):
 @app.get("/api/trees/mc")
 def api_tree_mc(m: int = Query(3, ge=1, le=6), c: int = Query(3, ge=1, le=6),
                 boat: int = Query(2, ge=1, le=4), strategy: str = "bfs"):
-    return tree_response(search_trees.MissionariesCannibals(m, c, boat), strategy)
+    prob = search_trees.MissionariesCannibals(m, c, boat)
+    if not prob.is_safe(m, c):
+        raise HTTPException(400, "The start state already breaks the rule: cannibals outnumber missionaries on the left bank")
+    return tree_response(prob, strategy)
 
 
 @app.get("/api/trees/rws")
