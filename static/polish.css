@@ -31,8 +31,8 @@ body {
 .req { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.04); transition: box-shadow .25s; }
 .req:hover { box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 14px 40px rgba(0,0,0,.08); }
 .req-head .badge { background: linear-gradient(90deg, var(--accent-soft), color-mix(in srgb, var(--w7) 18%, var(--paper))); }
-.box, .vdx-card, .flow .st, .cons, .kpi, .sig, .lane, .path-step { transition: transform .2s, box-shadow .2s, border-color .2s; }
-.vdx-card:hover, .flow .st:hover, .cons:hover, .kpi:hover, .sig:hover, .lane:hover, .path-step:hover {
+.box, .vdx-card, .flow .st, .cons, .kpi, .sig, .lane { transition: transform .2s, box-shadow .2s, border-color .2s; }
+.vdx-card:hover, .flow .st:hover, .cons:hover, .kpi:hover, .sig:hover, .lane:hover {
   transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.08); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .kpi { background: var(--paper); position: relative; overflow: hidden; }
 .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); opacity: .5; }
@@ -50,12 +50,6 @@ body {
 /* requirements matrix */
 .matrix td.cell .check { transition: transform .2s; }
 .matrix td.cell:hover .check { transform: scale(1.25); }
-
-/* trees: zoom */
-.tree-tools { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 6px; }
-.tree-tools .btn { padding: 4px 10px; font-size: 13px; }
-.tree-svg-wrap { cursor: grab; background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 18px 18px; }
-.tree-svg-wrap.drag { cursor: grabbing; user-select: none; }
 
 /* player */
 .player { background: linear-gradient(180deg, var(--soft), color-mix(in srgb, var(--soft) 60%, var(--paper))); }

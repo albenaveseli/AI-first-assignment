@@ -17,7 +17,6 @@
     <button data-go="golfers">1 · Social Golfers</button>
     <button data-go="sudoku">2 · Sudoku</button>
     <button data-go="latin">3 · Latin Square</button>
-    <button data-go="trees">4 · Search Trees</button>
     <button data-go="race">Race</button>
   </div>
   <span class="status-dot" id="apiDot" title="Server connection"></span>
@@ -31,9 +30,9 @@
     <div>
       <div class="kicker">Assignment 1 · Artificial Intelligence</div>
       <h1>Blind search,<br><em>made visible.</em></h1>
-      <p>4 problems · 3 algorithms · 1 shared engine. Every run happens live on the server.</p>
+      <p>3 problems · 3 algorithms · 1 shared engine. Every run happens live on the server.</p>
       <div class="hero-stats">
-        <div><b>4</b><span>problems</span></div>
+        <div><b>3</b><span>problems</span></div>
         <div><b>3</b><span>algorithms</span></div>
         <div><b>1</b><span>engine</span></div>
         <div><b>f = 0</b><span>every solution verified</span></div>
@@ -262,50 +261,6 @@
   </div>
 </section>
 
-<!-- ======================================================= 4. TREES -->
-<section class="page" id="page-trees">
-  <div class="ptitle" data-n="4"><div class="num">Problem 4</div><h1>Search Trees</h1>
-    <p>Root = start state · children = one action away · invalid and repeated states are not expanded.</p></div>
-  <div class="layout">
-    <nav class="side"></nav>
-    <div>
-      <div class="req" id="t-1">
-        <div class="req-head"><span class="badge">Tree 1</span><h2>8-Puzzle</h2></div>
-        <div class="flow" id="t8Flow"></div>
-        <div class="controls" style="margin-top:14px">
-          <label class="field">start state<input id="t8" value="123046758" maxlength="9" style="width:120px"></label>
-          <label class="field">shuffle depth<select id="t8k"><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
-          <button class="btn" id="t8Shuffle">🔀 Shuffle</button>
-          <label class="field">tree<select id="t8s"><option value="bfs">BFS</option><option value="dfs">DFS</option></select></label>
-          <button class="btn primary" id="t8Run">▶ Build tree</button>
-        </div>
-        <div id="t8Out"></div>
-      </div>
-      <div class="req" id="t-2">
-        <div class="req-head"><span class="badge">Tree 2</span><h2>Missionaries and Cannibals</h2></div>
-        <div class="flow" id="tmFlow"></div>
-        <div class="controls" style="margin-top:14px">
-          <label class="field">missionaries<input id="tmM" type="number" value="3" min="1" max="6"></label>
-          <label class="field">cannibals<input id="tmC" type="number" value="3" min="1" max="6"></label>
-          <label class="field">boat capacity<input id="tmB" type="number" value="2" min="1" max="4"></label>
-          <button class="btn primary" id="tmRun">▶ Build tree</button>
-        </div>
-        <div id="tmOut"></div>
-      </div>
-      <div class="req" id="t-3">
-        <div class="req-head"><span class="badge">Tree 3</span><h2>Rotating Workforce Scheduling</h2></div>
-        <div class="flow" id="trFlow"></div>
-        <div class="controls" style="margin-top:14px">
-          <label class="field">max work days in a row<input id="trW" type="number" value="4" min="2" max="7"></label>
-          <label class="field">max days off in a row<input id="trO" type="number" value="2" min="1" max="4"></label>
-          <button class="btn primary" id="trRun">▶ Build tree</button>
-        </div>
-        <div id="trOut"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ======================================================= RACE -->
 <section class="page" id="page-race">
   <div class="ptitle" data-n="vs"><div class="num">Comparison</div><h1>Algorithm Race</h1>
@@ -321,7 +276,6 @@
   </div>
 </section>
 </main>
-<div class="tip" id="tip"></div>
 <footer>Search Lab · Uninformed Search Techniques · Python + FastAPI, no search libraries</footer>
 <script src="/static/app.js"></script>
 <script src="/static/polish.js"></script>

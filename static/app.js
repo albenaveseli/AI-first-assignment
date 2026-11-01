@@ -69,7 +69,7 @@ function flow(el, steps) {
 })();
 
 /* ---------------- navigation ---------------- */
-const PAGES = ["home", "golfers", "sudoku", "latin", "trees", "race"];
+const PAGES = ["home", "golfers", "sudoku", "latin", "race"];
 const ONSHOW = {}, SHOWN = {};
 function go(page, anchor) {
   if (!PAGES.includes(page)) page = "home";
@@ -105,8 +105,6 @@ fetch("/api/sudoku/levels").then(r => { if (r.ok) $("#apiDot").classList.add("ok
     html += `<tr><td><b>${name}</b></td>` + cols.map((c, i) =>
       `<td class="cell" data-pg="${pg}" data-a="${pre}-${i + 1}"><span class="check">✓</span>${i === 4 ? algo : c}</td>`).join("") + "</tr>";
   });
-  html += `<tr><td><b>4 · Search Trees</b></td>` + ["8-Puzzle", "Missionaries &amp; Cannibals", "Rotating Workforce"].map((c, i) =>
-    `<td class="cell" data-pg="trees" data-a="t-${i + 1}"><span class="check">✓</span>${c}</td>`).join("") + `<td class="na" colspan="2">built live, interactive</td></tr>`;
   $("#reqMatrix").innerHTML = html;
   $$("#reqMatrix .cell").forEach(c => c.onclick = () => go(c.dataset.pg, c.dataset.a));
 })();
@@ -162,8 +160,8 @@ fetch("/api/sudoku/levels").then(r => { if (r.ok) $("#apiDot").classList.add("ok
   const defs = svgEl("defs"); const m = svgEl("marker", { id: "ah", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" });
   m.append(svgEl("path", { d: "M0,0 L10,5 L0,10 z", style: "fill:var(--muted)" })); defs.append(m); s.append(defs);
   // the problems
-  const probs = [["Social Golfers", "DFS", 1], ["Sudoku", "BFS", 2], ["Latin Square", "IDDFS", 3], ["Search Trees", "trees", 4]];
-  probs.forEach(([name, al, i], k) => { const y = 18 + k * 70; box(10, y, 200, 54, "var(--paper)", "var(--line)");
+  const probs = [["Social Golfers", "DFS", 1], ["Sudoku", "BFS", 2], ["Latin Square", "IDDFS", 3]];
+  probs.forEach(([name, al, i], k) => { const y = 38 + k * 80; box(10, y, 200, 54, "var(--paper)", "var(--line)");
     t(30, y + 33, String(i), 22, 700, "middle", "var(--accent)"); t(120, y + 25, name, 14, 700); t(120, y + 43, "uses " + al, 11, 400, "middle", "var(--muted)"); arrow(212, y + 27, 300, 150); });
   // the interface
   box(302, 40, 250, 220, "var(--accent-soft)", "var(--accent)");
@@ -799,156 +797,6 @@ $("#lRun").onclick = async () => {
   $("#lRun").disabled = false;
 };
 ONSHOW.latin = () => $("#lRun").click();
-
-/* =====================================================================
-   4. SEARCH TREES
-   ===================================================================== */
-const KIND = { goal: ["--good-soft", "--good", "goal"], invalid: ["--bad-soft", "--bad", "invalid"],
-  repeated: ["--soft", "--muted", "repeated"], normal: ["--paper", "--accent", "expanded"], cutoff: ["--warn-soft", "--warn", "cut-off"] };
-const tip = $("#tip");
-function drawTree(el, data, drawState, size) {
-  const N = data.nodes, kids = {};
-  N.forEach(nd => { if (nd.parent !== null) (kids[nd.parent] = kids[nd.parent] || []).push(nd); });
-  const [bw, bh] = size, gapX = 14, rowH = bh + 46, pos = {};
-  let leaf = 0;
-  (function layout(nd) {
-    const ch = kids[nd.id] || [];
-    if (!ch.length) pos[nd.id] = { x: leaf++ * (bw + gapX) };
-    else { ch.forEach(layout); pos[nd.id] = { x: (pos[ch[0].id].x + pos[ch[ch.length - 1].id].x) / 2 }; }
-    pos[nd.id].y = nd.depth * rowH;
-  })(N[0]);
-  const W = leaf * (bw + gapX) + 20, H = (Math.max(...N.map(x => x.depth)) + 1) * rowH + 10;
-  const svg = svgEl("svg", { width: W, height: H, viewBox: `-10 -10 ${W} ${H}` });
-  const gE = svgEl("g"), gN = svgEl("g"); svg.append(gE, gN);
-  el.innerHTML = ""; el.append(svg);
-  N.forEach((nd, i) => {
-    const p = pos[nd.id], [fill, stroke] = KIND[nd.kind];
-    if (nd.parent !== null) {
-      const q = pos[nd.parent];
-      const path = svgEl("path", { d: `M${q.x + bw / 2},${q.y + bh} C${q.x + bw / 2},${q.y + bh + 23} ${p.x + bw / 2},${p.y - 23} ${p.x + bw / 2},${p.y}`,
-        fill: "none", stroke: nd.sol ? css("--good") : css("--line"), "stroke-width": nd.sol ? 3.5 : 1.3, opacity: 0 });
-      path.style.transition = "opacity .3s"; gE.append(path);
-      setTimeout(() => path.setAttribute("opacity", 1), i * 28);
-    }
-    const g = svgEl("g", { class: "tnode", transform: `translate(${p.x},${p.y})`, opacity: 0 });
-    g.style.transition = "opacity .3s";
-    g.append(svgEl("rect", { width: bw, height: bh, rx: 7, fill: css(fill), stroke: nd.sol ? css("--good") : css(stroke),
-      "stroke-width": nd.sol ? 3 : 1.4, "stroke-dasharray": nd.kind === "repeated" ? "4 3" : "" }));
-    drawState(g, nd, bw, bh);
-    if (nd.kind === "invalid") g.append(svgEl("line", { x1: 4, y1: 4, x2: bw - 4, y2: bh - 4, stroke: css("--bad"), "stroke-width": 2, opacity: .7 }));
-    g.onmousemove = e => { tip.style.display = "block"; tip.style.left = e.clientX + 14 + "px"; tip.style.top = e.clientY + 14 + "px";
-      tip.textContent = `${nd.parent === null ? "ROOT" : "action: " + nd.action}\nstate: ${nd.state}\ndepth ${nd.depth} · ${KIND[nd.kind][2]}${nd.sol ? " · on solution path" : ""}`; };
-    g.onmouseleave = () => tip.style.display = "none";
-    gN.append(g);
-    setTimeout(() => g.setAttribute("opacity", 1), i * 28);
-  });
-  setTimeout(() => { el.scrollLeft = Math.max(0, pos[N[0].id].x - el.clientWidth / 2 + bw / 2); }, 20);
-}
-function treeSummary(out, d) {
-  const k = d.kinds;
-  out.insertAdjacentHTML("afterbegin", kpis([[fmt(d.nodes.length), `nodes (${d.strategy} tree)`], [d.solution_length ?? "–", "steps to goal"],
-    [k.invalid || 0, "invalid ✖"], [k.repeated || 0, "repeated ↺"], [k.goal || 0, "goal ✔"]]) +
-    `<div class="legend" style="margin-bottom:8px">${Object.entries(KIND).filter(([x]) => x !== "cutoff").map(([x, [f, s, l]]) =>
-      `<span><i style="background:var(${f});outline:2px solid var(${s})"></i>${l}</span>`).join("")}
-      <span><i style="background:var(--good)"></i>solution path</span><span>hover a node for details</span></div>`);
-}
-const txt = (g, s, x, y, extra = {}) => { const t = svgEl("text", { x, y, "text-anchor": "middle", ...extra }); t.textContent = s; g.append(t); };
-
-// --- 8-puzzle
-function puzzleState(g, nd, bw) {
-  const c = 13, x0 = (bw - 3 * c) / 2;
-  nd.grid.flat().forEach((v, i) => {
-    const x = x0 + (i % 3) * c, y = 5 + Math.floor(i / 3) * c;
-    if (v) { g.append(svgEl("rect", { x, y, width: c - 1, height: c - 1, rx: 2, fill: css("--accent-soft") })); txt(g, v, x + c / 2 - .5, y + 10, { "font-size": 9 }); }
-  });
-}
-const miniGrid = grid => `<span class="mini">${grid.flat().map(v => `<span class="${v ? "" : "z"}">${v || ""}</span>`).join("")}</span>`;
-flow($("#t8Flow"), [
-  { k: "State", vis: miniGrid([[1, 2, 3], [0, 4, 6], [7, 5, 8]]), cap: "3×3 board, one blank" },
-  { k: "Actions", vis: `<span style="font-size:30px;letter-spacing:4px">↑↓←→</span>`, cap: "slide the blank" },
-  { k: "Goal", vis: miniGrid([[1, 2, 3], [4, 5, 6], [7, 8, 0]]), cap: "half of all states can't get here", goal: true }]);
-$("#t8Shuffle").onclick = () => {
-  let s = [1, 2, 3, 4, 5, 6, 7, 8, 0], prev = -1;
-  for (let m = 0; m < +$("#t8k").value; m++) {
-    const z = s.indexOf(0), r = Math.floor(z / 3), c = z % 3;
-    const opts = [[-3, r > 0], [3, r < 2], [-1, c > 0], [1, c < 2]].filter(([d, ok]) => ok && z + d !== prev).map(x => x[0]);
-    const d = opts[Math.floor(Math.random() * opts.length)];
-    [s[z], s[z + d]] = [s[z + d], s[z]]; prev = z;
-  }
-  $("#t8").value = s.join(""); $("#t8Run").click();
-};
-$("#t8Run").onclick = async () => {
-  const out = $("#t8Out"); out.innerHTML = spin("Building the tree…");
-  try {
-    const d = await api(`/api/trees/puzzle?start=${$("#t8").value}&strategy=${$("#t8s").value}`);
-    out.innerHTML = `<div class="tree-svg-wrap"></div>` + (d.path.length ? `<h3>Solution path</h3><div class="path-strip">${d.path.map((p, i) =>
-      `<div class="path-step"><div class="a">${i ? p.action : "start"}</div>${miniGrid(p.grid)}</div>`).join("")}</div>`
-      : `<div class="note">The goal is deeper than this tree can show (${fmt(d.nodes.length)} nodes drawn). Try a start state with fewer moves, e.g. 🔀 Shuffle.</div>`);
-    treeSummary(out, d);
-    drawTree($(".tree-svg-wrap", out), d, puzzleState, [52, 46]);
-  } catch (e) { out.innerHTML = `<p class="err">${e.message}</p>`; }
-};
-// --- Missionaries & Cannibals
-const mcParse = s => { const m = s.match(/(\d+)M(\d+)C\s*(\[B\])?.*?(\d+)M(\d+)C/); return m ? { lm: +m[1], lc: +m[2], left: !!m[3], rm: +m[4], rc: +m[5] } : null; };
-function mcState(g, nd, bw, bh) {
-  const s = mcParse(nd.state); if (!s) return;
-  const row = (x, cnt, color, y) => { for (let i = 0; i < cnt; i++) g.append(svgEl("circle", { cx: x + i * 7, cy: y, r: 3, fill: color })); };
-  row(5, s.lm, css("--w1"), 10); row(5, s.lc, css("--w4"), 20);
-  row(bw - 5 - 7 * Math.max(s.rm, 1) + 7, s.rm, css("--w1"), 10); row(bw - 5 - 7 * Math.max(s.rc, 1) + 7, s.rc, css("--w4"), 20);
-  g.append(svgEl("rect", { x: bw / 2 - 6, y: 3, width: 12, height: bh - 6, fill: css("--accent-soft") }));
-  txt(g, "⛵", s.left ? bw / 2 - 9 : bw / 2 + 9, bh - 4, { "font-size": 9 });
-}
-const ppl = (m, c) => `${"<span class='p-m'></span>".repeat(m)}${"<span class='p-c'></span>".repeat(c)}`;
-function mcStep(state) {
-  const s = mcParse(state); if (!s) return state;
-  return `<div class="river"><div class="bank">${ppl(s.lm, s.lc)}</div><div class="w"><span class="boat" style="${s.left ? "left:1px" : "right:1px"}">⛵</span></div><div class="bank">${ppl(s.rm, s.rc)}</div></div>`;
-}
-flow($("#tmFlow"), [
-  { k: "State (M, C, B)", vis: mcStep("3M3C [B]~~ 0M0C"), cap: "everyone on the left bank" },
-  { k: "Actions", vis: `<span style="font-size:15px">⛵ ${ppl(1, 0)} · ${ppl(2, 0)} · ${ppl(0, 1)} · ${ppl(0, 2)} · ${ppl(1, 1)}</span>`, cap: "boat carries 1 or 2" },
-  { k: "Constraint", vis: `<span style="font-size:20px">${ppl(0, 1)} ≤ ${ppl(1, 0)}</span>`, cap: "cannibals never outnumber missionaries on a bank" },
-  { k: "Goal", vis: mcStep("0M0C ~~[B] 3M3C"), cap: "(0, 0, 0)", goal: true }]);
-$("#tmRun").onclick = async () => {
-  const out = $("#tmOut"); out.innerHTML = spin("Building the tree…");
-  try {
-    const d = await api(`/api/trees/mc?m=${$("#tmM").value}&c=${$("#tmC").value}&boat=${$("#tmB").value}`);
-    out.innerHTML = `<div class="tree-svg-wrap"></div>` + (d.path.length ? `<h3>Solution path · ${d.path.length - 1} crossings</h3>
-      <div class="path-strip">${d.path.map((p, i) => `<div class="path-step"><div class="a">${i ? p.action : "start"}</div>${mcStep(p.state)}</div>`).join("")}</div>`
-      : `<div class="note">No solution: the whole tree was explored and no branch reaches the goal.</div>`);
-    treeSummary(out, d);
-    drawTree($(".tree-svg-wrap", out), d, mcState, [62, 28]);
-  } catch (e) { out.innerHTML = `<p class="err">${e.message}</p>`; }
-};
-// --- Rotating Workforce
-function rwsState(g, nd, bw) {
-  if (!nd.grid || !nd.grid[0].length) { txt(g, "∅", bw / 2, 22, { "font-size": 14 }); return; }
-  nd.grid.forEach((row, r) => row.forEach((v, c) => g.append(svgEl("rect", { x: 4 + c * 7, y: 4 + r * 9, width: 6, height: 8, rx: 1,
-    fill: v === "D" ? "#f4d35e" : v === "N" ? "#3d4a7a" : css("--line") }))));
-}
-function rwsTable(grid) {
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  return `<div class="rws"><div>${days.slice(0, grid[0].length).map(d => `<span>${d}</span>`).join("")}</div>${grid.map(row =>
-    `<div>${row.map(v => `<span class="${v === "-" ? "R" : v}">${v === "-" ? "·" : v}</span>`).join("")}</div>`).join("")}</div>`;
-}
-flow($("#trFlow"), [
-  { k: "Instance", vis: `<span style="font-size:26px">👷👷👷 × 7 days</span>`, cap: "shifts D (day) · N (night) · off" },
-  { k: "Action", vis: rwsTable([["D"], ["N"], ["-"]]), cap: "fill the next day (6 permutations)" },
-  { k: "Rules", vis: `<span style="font-size:15px;line-height:1.7">N → D ✖<br>≤ 4 work days in a row<br>≤ 2 days off in a row</span>`, cap: "rows rotate weekly → one 21-day cycle" },
-  { k: "Goal", vis: rwsTable([["D", "D", "N", "-"], ["N", "-", "D", "D"], ["-", "N", "-", "N"]]), cap: "valid cyclic roster", goal: true }]);
-$("#trRun").onclick = async () => {
-  const out = $("#trOut"); out.innerHTML = spin("Building the tree…");
-  try {
-    const d = await api(`/api/trees/rws?max_work=${$("#trW").value}&max_off=${$("#trO").value}`);
-    const last = d.path[d.path.length - 1];
-    out.innerHTML = `<div class="tree-svg-wrap"></div>` + (d.solution_length ? `<h3>Roster found</h3><div class="two"><div>${rwsTable(last.grid)}
-      <div class="legend" style="margin-top:6px"><span><i style="background:#f4d35e"></i>D day</span><span><i style="background:#3d4a7a"></i>N night</span><span><i style="background:var(--line)"></i>off</span></div></div>
-      <div class="cap" style="text-align:left">Worker 1 works row 1 in week 1, row 2 in week 2, row 3 in week 3, then repeats. Read as one 21-day cycle, no rule is broken.</div></div>`
-      : `<div class="note">No valid roster exists with these rules.</div>`);
-    treeSummary(out, d);
-    drawTree($(".tree-svg-wrap", out), d, rwsState, [56, 34]);
-  } catch (e) { out.innerHTML = `<p class="err">${e.message}</p>`; }
-};
-ONSHOW.trees = () => { $("#t8Run").click(); $("#tmRun").click(); $("#trRun").click(); };
 
 /* =====================================================================
    RACE

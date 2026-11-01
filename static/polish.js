@@ -64,31 +64,7 @@
     })();
   }
 
-  /* 5. trees: zoom and drag */
-  function treeTools(wrap) {
-    const svg = wrap.querySelector("svg");
-    if (!svg || wrap.dataset.tools) return;
-    wrap.dataset.tools = 1;
-    const baseW = +svg.getAttribute("width"), baseH = +svg.getAttribute("height");
-    let z = 1;
-    const apply = () => { svg.setAttribute("width", baseW * z); svg.setAttribute("height", baseH * z); };
-    const tools = document.createElement("div");
-    tools.className = "tree-tools";
-    tools.innerHTML = `<button class="btn" data-z="out">−</button><button class="btn" data-z="fit">⤢ fit</button><button class="btn" data-z="in">+</button>`;
-    tools.onclick = e => {
-      const a = e.target.dataset.z; if (!a) return;
-      z = a === "in" ? Math.min(3, z * 1.25) : a === "out" ? Math.max(.2, z / 1.25) : Math.min(1, (wrap.clientWidth - 10) / baseW);
-      apply();
-    };
-    wrap.parentNode.insertBefore(tools, wrap);
-    let sx, sy, sl, st, down = false;
-    wrap.addEventListener("mousedown", e => { down = true; sx = e.clientX; sy = e.clientY; sl = wrap.scrollLeft; st = wrap.scrollTop; wrap.classList.add("drag"); });
-    addEventListener("mouseup", () => { down = false; wrap.classList.remove("drag"); });
-    wrap.addEventListener("mousemove", e => { if (!down) return; wrap.scrollLeft = sl - (e.clientX - sx); wrap.scrollTop = st - (e.clientY - sy); });
-    wrap.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); z = Math.max(.2, Math.min(3, z * (e.deltaY < 0 ? 1.1 : .9))); apply(); }, { passive: false });
-  }
-
-  /* 6. golfers: "Play weeks" lights the weeks up one by one */
+  /* 5. golfers: "Play weeks" lights the weeks up one by one */
   function weekPlayer(slider) {
     if (slider.dataset.player) return;
     slider.dataset.player = 1;
@@ -110,8 +86,6 @@
     if (!(root instanceof Element)) return;
     root.querySelectorAll(".kpi b, .hero-stats b").forEach(countUp);
     if (root.matches?.(".kpi b")) countUp(root);
-    root.querySelectorAll(".tree-svg-wrap").forEach(treeTools);
-    if (root.closest?.(".tree-svg-wrap")) treeTools(root.closest(".tree-svg-wrap"));
     root.querySelectorAll("input.wk").forEach(weekPlayer);
   };
   new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(scan))).observe(document.body, { childList: true, subtree: true });

@@ -6,7 +6,6 @@ Usage:
     python main.py golfers [g p w]      -> Social Golfers with DFS (default 8 4, asks "how many weeks?")
     python main.py sudoku [easy|medium|hard|extreme|<81 digits>]
     python main.py latin [n]
-    python main.py trees
     python main.py race                 -> race DFS vs BFS vs IDDFS on all three problems
 """
 
@@ -15,7 +14,6 @@ import sys
 import golfers
 import landscape
 import latin_square
-import search_trees
 import sudoku
 from engine import bfs, dfs, iddfs
 
@@ -138,27 +136,6 @@ def run_latin(n=5, time_limit=20):
 
 
 # ---------------------------------------------------------------------------
-def run_trees():
-    title("4. SEARCH TREES")
-    print(search_trees.__doc__)
-    for prob, strategy in [(search_trees.EightPuzzle(), "bfs"),
-                           (search_trees.MissionariesCannibals(), "bfs"),
-                           (search_trees.RotatingWorkforce(), "dfs")]:
-        section(f"{prob.name}  (pema e ndertuar me {strategy.upper()})")
-        root, nodes, goal = search_trees.build_tree(prob, strategy=strategy, max_nodes=500)
-        search_trees.print_tree(prob, root, max_lines=120)
-        kinds = {}
-        for nd in nodes:
-            kinds[nd.kind] = kinds.get(nd.kind, 0) + 1
-        print(f"\n  Nyje: {len(nodes)} | " + " | ".join(f"{k}: {v}" for k, v in kinds.items()))
-        if goal:
-            path = search_trees.solution_path(goal)
-            print(f"  Zgjidhja ({len(path) - 1} hapa, e shenuar me *):")
-            for nd in path[1:]:
-                print(f"     {nd.action:12} -> {prob.show(nd.state)}")
-
-
-# ---------------------------------------------------------------------------
 def run_race(time_limit=10):
     title("GARA E ALGORITMEVE: i njejti problem, tre algoritme")
     cases = [
@@ -181,8 +158,7 @@ def menu():
   1) Social Golfers (DFS)
   2) Sudoku (BFS)
   3) Latin Square (IDDFS)
-  4) Search Trees (8-Puzzle, Missionaries & Cannibals, Rotating Workforce)
-  5) Gara e algoritmeve
+  4) Gara e algoritmeve
   0) Dil""")
         ch = input("  Zgjedhja: ").strip()
         if ch == "1":
@@ -196,8 +172,6 @@ def menu():
         elif ch == "3":
             run_latin(int(input("  n [5]: ") or 5))
         elif ch == "4":
-            run_trees()
-        elif ch == "5":
             run_race()
         elif ch == "0":
             break
@@ -218,8 +192,6 @@ if __name__ == "__main__":
                 run_sudoku(lvl)
     elif args[0] == "latin":
         run_latin(int(args[1]) if len(args) > 1 else 5)
-    elif args[0] == "trees":
-        run_trees()
     elif args[0] == "race":
         run_race()
     else:

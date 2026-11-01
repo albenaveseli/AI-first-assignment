@@ -19,7 +19,6 @@ from pydantic import BaseModel
 import golfers
 import landscape
 import latin_square
-import search_trees
 import sudoku
 from engine import ALGORITHMS, Tracer
 
@@ -59,16 +58,6 @@ GOLF_LABELS = ["No constraints: n^(n·w)", "Each week a permutation: (n!)^w",
 SUDOKU_LABELS = ["No constraints: 9^(empty cells)", "After removing values that clash with the givens",
                  "Solutions (a proper Sudoku has exactly 1)"]
 LATIN_LABELS = ["No constraints: n^(n²)", "Every row a permutation: (n!)^n", "Latin squares (solutions)"]
-ACTIONS_EN = {"LART": "UP", "POSHTE": "DOWN", "MAJTAS": "LEFT", "DJATHTAS": "RIGHT",
-              "Hen": "Mon", "Mar": "Tue", "Mer": "Wed", "Enj": "Thu", "Pre": "Fri", "Sht": "Sat", "Die": "Sun"}
-
-
-def action_en(a):
-    for k, v in ACTIONS_EN.items():
-        a = a.replace(k, v)
-    return a
-
-
 def hist(problem, samples=1500):
     r = landscape.sample_objective(problem, samples)
     r["histogram"] = [list(x) for x in r["histogram"]]
@@ -174,49 +163,6 @@ def api_latin(n: int = Query(5, ge=1, le=12), algo: str = "IDDFS", symmetry: boo
                       "histogram": hist(latin_square.LatinSquare(n, symmetry=False))},
         "trace": trace,
     }
-
-
-# ---------------------------------------------------------------------------
-# 4. SEARCH TREES
-# ---------------------------------------------------------------------------
-def tree_response(prob, strategy, max_nodes=600):
-    root, nodes, goal = search_trees.build_tree(prob, strategy=strategy, max_nodes=max_nodes)
-    kinds = {}
-    for nd in nodes:
-        kinds[nd.kind] = kinds.get(nd.kind, 0) + 1
-    path = search_trees.solution_path(goal) if goal else []
-    tree = search_trees.tree_to_json(prob, nodes)
-    for nd in tree:
-        nd["action"] = action_en(nd["action"])
-    return {"name": prob.name, "strategy": strategy.upper(), "nodes": tree,
-            "kinds": kinds, "solution_length": goal.depth if goal else None,
-            "path": [{"action": action_en(nd.action), "state": prob.show(nd.state),
-                      "grid": prob.grid(nd.state) if hasattr(prob, "grid") else None} for nd in path]}
-
-
-@app.get("/api/trees/puzzle")
-def api_tree_puzzle(start: str = "123046758", strategy: str = "bfs"):
-    digits = [int(c) for c in start if c.isdigit()]
-    if sorted(digits) != list(range(9)):
-        raise HTTPException(400, "The state must contain each of 0..8 exactly once")
-    if not search_trees.EightPuzzle.is_solvable(digits):
-        raise HTTPException(400, "This state can NOT reach the goal (odd inversion parity)")
-    return tree_response(search_trees.EightPuzzle(digits), strategy, max_nodes=800)
-
-
-@app.get("/api/trees/mc")
-def api_tree_mc(m: int = Query(3, ge=1, le=6), c: int = Query(3, ge=1, le=6),
-                boat: int = Query(2, ge=1, le=4), strategy: str = "bfs"):
-    prob = search_trees.MissionariesCannibals(m, c, boat)
-    if not prob.is_safe(m, c):
-        raise HTTPException(400, "The start state already breaks the rule: cannibals outnumber missionaries on the left bank")
-    return tree_response(prob, strategy)
-
-
-@app.get("/api/trees/rws")
-def api_tree_rws(max_work: int = Query(4, ge=2, le=7), max_off: int = Query(2, ge=1, le=4),
-                 strategy: str = "dfs"):
-    return tree_response(search_trees.RotatingWorkforce(max_work=max_work, max_off=max_off), strategy)
 
 
 # ---------------------------------------------------------------------------
