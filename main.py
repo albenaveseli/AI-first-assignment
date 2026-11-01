@@ -86,7 +86,11 @@ def run_sudoku(level="medium", time_limit=60):
     name = level if level in sudoku.PUZZLES else "i dhene nga perdoruesi"
     title(f"2. SUDOKU ({name})  -  BFS + Backtracking")
     print(sudoku.__doc__)
-    prob = sudoku.Sudoku(puzzle)
+    try:
+        prob = sudoku.Sudoku(puzzle)
+    except ValueError:
+        print("  Sudoku duhet te kete saktesisht 81 shifra (0 = qelize bosh).")
+        return
     if not prob.is_valid_start():
         print("  Sudoku i dhene ka konflikte qe ne fillim: nuk ka zgjidhje.")
         return

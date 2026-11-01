@@ -108,6 +108,10 @@ class Tracer:
         self.nodes.append([nid, parent, label, depth, iteration, "ok", var, value])
         return nid
 
+    @property
+    def full(self):
+        return len(self.nodes) >= self.limit
+
     def mark(self, nid, status):
         if 0 <= nid < len(self.nodes):
             self.nodes[nid][5] = status
@@ -149,7 +153,7 @@ def dfs(problem, time_limit=None, node_limit=None, tracer=None):
         for value in problem.values(state, var):
             stats.nodes += 1
             guard.check()
-            nid = tracer.add(parent_id, problem.label(var, value), depth + 1, 0, var, value) if tracer else -1
+            nid = tracer.add(parent_id, problem.label(var, value), depth + 1, 0, var, value) if tracer and not tracer.full else -1
             problem.assign(state, var, value)
             if recurse(depth + 1, nid):
                 return True
@@ -198,7 +202,7 @@ def bfs(problem, time_limit=None, node_limit=None, tracer=None):
                 guard.check()
                 child = problem.copy(state)
                 problem.assign(child, var, value)
-                cid = tracer.add(nid, problem.label(var, value), depth + 1, 0, var, value) if tracer else -1
+                cid = tracer.add(nid, problem.label(var, value), depth + 1, 0, var, value) if tracer and not tracer.full else -1
                 queue.append((child, cid, depth + 1))
         return False
 
@@ -231,7 +235,7 @@ def iddfs(problem, time_limit=None, node_limit=None, tracer=None):
         for value in problem.values(state, var):
             stats.nodes += 1
             guard.check()
-            nid = tracer.add(parent_id, problem.label(var, value), depth + 1, it, var, value) if tracer else -1
+            nid = tracer.add(parent_id, problem.label(var, value), depth + 1, it, var, value) if tracer and not tracer.full else -1
             problem.assign(state, var, value)
             r = depth_limited(state, depth + 1, limit, nid, it)
             if r == "found":

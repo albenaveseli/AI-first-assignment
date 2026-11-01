@@ -119,7 +119,7 @@ class SudokuRequest(BaseModel):
     puzzle: str | None = None
     level: str | None = "easy"
     algo: str = "BFS"
-    time_limit: float = 20
+    time_limit: float = 30
 
 
 @app.get("/api/sudoku/levels")

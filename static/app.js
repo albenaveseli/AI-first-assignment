@@ -881,8 +881,9 @@ $("#t8Run").onclick = async () => {
   const out = $("#t8Out"); out.innerHTML = spin("Building the tree…");
   try {
     const d = await api(`/api/trees/puzzle?start=${$("#t8").value}&strategy=${$("#t8s").value}`);
-    out.innerHTML = `<div class="tree-svg-wrap"></div><h3>Solution path</h3><div class="path-strip">${d.path.map((p, i) =>
-      `<div class="path-step"><div class="a">${i ? p.action : "start"}</div>${miniGrid(p.grid)}</div>`).join("")}</div>`;
+    out.innerHTML = `<div class="tree-svg-wrap"></div>` + (d.path.length ? `<h3>Solution path</h3><div class="path-strip">${d.path.map((p, i) =>
+      `<div class="path-step"><div class="a">${i ? p.action : "start"}</div>${miniGrid(p.grid)}</div>`).join("")}</div>`
+      : `<div class="note">The goal is deeper than this tree can show (${fmt(d.nodes.length)} nodes drawn). Try a start state with fewer moves, e.g. 🔀 Shuffle.</div>`);
     treeSummary(out, d);
     drawTree($(".tree-svg-wrap", out), d, puzzleState, [52, 46]);
   } catch (e) { out.innerHTML = `<p class="err">${e.message}</p>`; }
