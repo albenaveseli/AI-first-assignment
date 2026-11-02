@@ -3,6 +3,8 @@
 Assignment 1. Three search problems, three algorithms and **one shared search engine**.
 Problem 4 (Search Trees) is delivered as a PDF in [Search_Trees_PDF/](Search_Trees_PDF/).
 
+**Live demo:** https://ai-first-assignment.onrender.com/#sudoku (the free server sleeps when unused; the first visit may take up to a minute)
+
 ## How to run
 
 ### Web app (FastAPI), the main way

@@ -25,6 +25,9 @@ jobs:
   deploy:
     needs: test             # deploy only if the tests passed
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ai-first-assignment.onrender.com/#sudoku   # shown as a link in the Actions run
     steps:
       - name: Trigger the Render deploy
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
