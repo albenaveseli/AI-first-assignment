@@ -1,0 +1,30 @@
+# On every push to main: test that the algorithms run, then deploy to Render.
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # also allows a manual run from the Actions tab
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Quick check of the algorithms
+        run: |
+          python -c "import server"
+          python main.py golfers 3 2 2
+          python main.py sudoku easy
+          python main.py latin 4
+
+  deploy:
+    needs: test             # deploy only if the tests passed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the Render deploy
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
